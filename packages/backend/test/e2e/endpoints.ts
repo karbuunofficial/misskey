@@ -10,9 +10,10 @@ import { describe, beforeAll, test, expect, vi } from 'vitest';
 // node-fetch only supports it's own Blob yet
 // https://github.com/node-fetch/node-fetch/pull/1664
 import { Blob } from 'node-fetch';
-import { api, castAsError, initTestDb, post, role, signup, simpleGet, uploadFile } from '../utils.js';
+import { api, castAsError, initTestDb, post, relativeFetch, role, signup, simpleGet, uploadFile } from '../utils.js';
 import type * as misskey from 'misskey-js';
-import { MiUser } from '@/models/_.js';
+import { MiPasswordResetRequest, MiUser } from '@/models/_.js';
+import { genAidx } from '@/misc/id/aidx.js';
 
 const waitForPushToTlOptions = { timeout: 3000, interval: 25 };
 
@@ -1248,6 +1249,116 @@ describe('Endpoints', () => {
 
 			assert.strictEqual((resAlice.body as unknown as { memo: string }).memo, memoAliceToBob);
 			assert.strictEqual((resCarol.body as unknown as { memo: string }).memo, memoCarolToBob);
+		});
+	});
+
+	describe('security headers', () => {
+		test('API responses carry X-Content-Type-Options: nosniff', async () => {
+			const res = await relativeFetch('api/meta', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: '{}',
+			});
+			assert.strictEqual(res.status, 200);
+			assert.strictEqual(res.headers.get('x-content-type-options'), 'nosniff');
+		});
+
+		test('non-API responses carry X-Content-Type-Options: nosniff', async () => {
+			const res = await relativeFetch('nodeinfo/2.1');
+			assert.strictEqual(res.status, 200);
+			assert.strictEqual(res.headers.get('x-content-type-options'), 'nosniff');
+		});
+	});
+
+	describe('admin/reset-password', () => {
+		let admin: misskey.entities.SignupResponse;
+		let moderatorA: misskey.entities.SignupResponse;
+		let moderatorB: misskey.entities.SignupResponse;
+		let plainUser: misskey.entities.SignupResponse;
+
+		beforeAll(async () => {
+			admin = await signup({ username: 'resetAdmin' });
+			moderatorA = await signup({ username: 'resetModA' });
+			moderatorB = await signup({ username: 'resetModB' });
+			plainUser = await signup({ username: 'resetPlain' });
+
+			const adminRole = await role(alice, { isAdministrator: true, name: 'reset admin role' });
+			await api('admin/roles/assign', { userId: admin.id, roleId: adminRole.id }, alice);
+			const moderatorRole = await role(alice, { isModerator: true, name: 'reset moderator role' });
+			await api('admin/roles/assign', { userId: moderatorA.id, roleId: moderatorRole.id }, alice);
+			await api('admin/roles/assign', { userId: moderatorB.id, roleId: moderatorRole.id }, alice);
+		}, 1000 * 60 * 2);
+
+		test('a moderator cannot reset the password of another moderator', async () => {
+			const res = await api('admin/reset-password', { userId: moderatorB.id }, moderatorA);
+			assert.strictEqual(res.status, 400);
+			assert.strictEqual(castAsError(res.body as any).error.code, 'ACCESS_DENIED');
+
+			// moderator B is unaffected
+			const check = await api('i', {}, moderatorB);
+			assert.strictEqual(check.status, 200);
+		});
+
+		test('a moderator cannot reset the password of an administrator', async () => {
+			const res = await api('admin/reset-password', { userId: admin.id }, moderatorA);
+			assert.strictEqual(res.status, 400);
+			assert.strictEqual(castAsError(res.body as any).error.code, 'ACCESS_DENIED');
+		});
+
+		test('a moderator resetting their own password keeps their session', async () => {
+			const res = await api('admin/reset-password', { userId: moderatorA.id }, moderatorA);
+			assert.strictEqual(res.status, 200);
+			const check = await api('i', {}, moderatorA);
+			assert.strictEqual(check.status, 200);
+		});
+
+		test('an administrator can reset the password of a moderator', async () => {
+			const res = await api('admin/reset-password', { userId: moderatorB.id }, admin);
+			assert.strictEqual(res.status, 200);
+			assert.strictEqual(typeof (res.body as { password: string }).password, 'string');
+		});
+
+		test('resetting a password invalidates the existing session of the target user', async () => {
+			const before = await api('i', {}, plainUser);
+			assert.strictEqual(before.status, 200);
+
+			const res = await api('admin/reset-password', { userId: plainUser.id }, moderatorA);
+			assert.strictEqual(res.status, 200);
+			const newPassword = (res.body as { password: string }).password;
+			assert.strictEqual(newPassword.length, 8);
+
+			// the old token must no longer authenticate
+			await expect.poll(async () => (await api('i', {}, plainUser)).status, { timeout: 3000, interval: 50 }).toBe(401);
+
+			// the new password must sign in
+			const signin = await api('signin-flow', { username: plainUser.username, password: newPassword });
+			assert.strictEqual(signin.status, 200);
+			assert.strictEqual((signin.body as { finished: boolean }).finished, true);
+		});
+	});
+
+	describe('reset-password (self service)', () => {
+		test('completing a password reset invalidates the existing session', async () => {
+			const victim = await signup({ username: 'resetSelf' });
+			const before = await api('i', {}, victim);
+			assert.strictEqual(before.status, 200);
+
+			const connection = await initTestDb(true);
+			const token = `reset-token-${Date.now()}`;
+			await connection.getRepository(MiPasswordResetRequest).insert({
+				id: genAidx(Date.now()),
+				token,
+				userId: victim.id,
+			});
+
+			const res = await api('reset-password', { token, password: 'brand-new-password' });
+			assert.strictEqual(res.status, 204);
+
+			await expect.poll(async () => (await api('i', {}, victim)).status, { timeout: 3000, interval: 50 }).toBe(401);
+
+			const signin = await api('signin-flow', { username: victim.username, password: 'brand-new-password' });
+			assert.strictEqual(signin.status, 200);
+			assert.strictEqual((signin.body as { finished: boolean }).finished, true);
 		});
 	});
 });

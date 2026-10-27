@@ -9,6 +9,7 @@ import type { UserProfilesRepository, PasswordResetRequestsRepository } from '@/
 import { Endpoint } from '@/server/api/endpoint-base.js';
 import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
+import { UserAuthService } from '@/core/UserAuthService.js';
 
 export const meta = {
 	tags: ['reset password'],
@@ -41,6 +42,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 		private userProfilesRepository: UserProfilesRepository,
 
 		private idService: IdService,
+		private userAuthService: UserAuthService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const req = await this.passwordResetRequestsRepository.findOneByOrFail({
@@ -60,7 +62,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				password: hash,
 			});
 
-			this.passwordResetRequestsRepository.delete(req.id);
+			// The request is strictly single-use: consume it before anything else can fail.
+			await this.passwordResetRequestsRepository.delete(req.id);
+
+			// Invalidate existing sessions: whoever held the old credentials
+			// (possibly an attacker, which is why the reset happened) is logged out.
+			await this.userAuthService.regenerateNativeToken(req.userId);
 		});
 	}
 }

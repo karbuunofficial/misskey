@@ -12,6 +12,7 @@ import { DI } from '@/di-symbols.js';
 import { secureRndstr } from '@/misc/secure-rndstr.js';
 import { RoleService } from '@/core/RoleService.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
+import { UserAuthService } from '@/core/UserAuthService.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -69,6 +70,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 		private roleService: RoleService,
 		private moderationLogService: ModerationLogService,
+		private userAuthService: UserAuthService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const user = await this.usersRepository.findOneBy({ id: ps.userId });
@@ -77,8 +79,17 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				throw new ApiError(meta.errors.noSuchUser);
 			}
 
-			if (await this.roleService.isAdministrator(user) && me.id !== user.id) {
-				throw new ApiError(meta.errors.accessDenied);
+			if (me.id !== user.id) {
+				// Administrators can only be reset by themselves.
+				if (await this.roleService.isAdministrator(user)) {
+					throw new ApiError(meta.errors.accessDenied);
+				}
+
+				// Moderators can only be reset by administrators (or by themselves),
+				// so a moderator cannot take over another moderator's account.
+				if (await this.roleService.isModerator(user) && !await this.roleService.isAdministrator(me)) {
+					throw new ApiError(meta.errors.accessDenied);
+				}
 			}
 
 			const passwd = secureRndstr(8);
@@ -91,6 +102,13 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			}, {
 				password: hash,
 			});
+
+			// Invalidate existing sessions of the target user: a password reset
+			// performed by staff must not leave previously issued credentials usable.
+			// (A self-reset keeps the caller's own session; they can rotate it via i/regenerate-token.)
+			if (me.id !== user.id) {
+				await this.userAuthService.regenerateNativeToken(user.id);
+			}
 
 			this.moderationLogService.log(me, 'resetPassword', {
 				userId: user.id,

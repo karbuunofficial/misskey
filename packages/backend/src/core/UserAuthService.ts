@@ -8,8 +8,11 @@ import * as Redis from 'ioredis';
 import * as OTPAuth from 'otpauth';
 import { createHash } from 'node:crypto';
 import { DI } from '@/di-symbols.js';
-import type { MiUserProfile, UserProfilesRepository, UsersRepository } from '@/models/_.js';
+import type { MiUser, MiUserProfile, UserProfilesRepository, UsersRepository } from '@/models/_.js';
 import { bindThis } from '@/decorators.js';
+import { generateNativeUserToken } from '@/misc/token.js';
+import { CacheService } from '@/core/CacheService.js';
+import { GlobalEventService } from '@/core/GlobalEventService.js';
 
 @Injectable()
 export class UserAuthService {
@@ -22,7 +25,33 @@ export class UserAuthService {
 
 		@Inject(DI.userProfilesRepository)
 		private userProfilesRepository: UserProfilesRepository,
+
+		private cacheService: CacheService,
+		private globalEventService: GlobalEventService,
 	) {
+	}
+
+	/**
+	 * Rotates the native login token of a local user, invalidating every
+	 * session that was issued with the previous token. Used after password
+	 * resets so that previously held credentials can no longer be used.
+	 *
+	 * The local cache entry is dropped synchronously (the `userTokenRegenerated`
+	 * event also reaches every worker through Redis, but asynchronously).
+	 */
+	@bindThis
+	public async regenerateNativeToken(userId: MiUser['id']): Promise<void> {
+		const user = await this.usersRepository.findOneBy({ id: userId });
+		if (user == null || user.host != null || user.token == null) return;
+
+		const oldToken = user.token;
+		const newToken = generateNativeUserToken();
+
+		await this.usersRepository.update(user.id, { token: newToken });
+		this.cacheService.localUserByNativeTokenCache.delete(oldToken);
+
+		this.globalEventService.publishInternalEvent('userTokenRegenerated', { id: user.id, oldToken, newToken });
+		this.globalEventService.publishMainStream(user.id, 'myTokenRegenerated');
 	}
 
 	@bindThis

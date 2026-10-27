@@ -92,6 +92,13 @@ export class ServerService implements OnApplicationShutdown {
 			});
 		}
 
+		// Prevent MIME-type sniffing on every response (defense in depth against
+		// content-type confusion, e.g. user-uploaded files being executed as scripts).
+		fastify.addHook('onRequest', (request, reply, done) => {
+			reply.header('X-Content-Type-Options', 'nosniff');
+			done();
+		});
+
 		// for test
 		if (envOption.enableCrossOriginIsolation) {
 			fastify.addHook('onRequest', (request, reply, done) => {

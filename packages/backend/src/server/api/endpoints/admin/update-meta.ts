@@ -7,6 +7,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
 import type { MiMeta } from '@/models/Meta.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
+import { redactServerSettingsForLog } from '@/misc/redact-server-settings.js';
 import { Endpoint } from '@/server/api/endpoint-base.js';
 import { MetaService } from '@/core/MetaService.js';
 
@@ -798,10 +799,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 
 			const after = await this.metaService.fetch(true);
 
-			this.moderationLogService.log(me, 'updateServerSettings', {
-				before,
-				after,
-			});
+			// Secret values (SMTP password, captcha secrets, object storage keys, ...)
+			// must not be persisted into the moderation log.
+			this.moderationLogService.log(me, 'updateServerSettings', redactServerSettingsForLog(before, after));
 		});
 	}
 }
