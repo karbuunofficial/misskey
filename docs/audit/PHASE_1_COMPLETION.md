@@ -3,8 +3,9 @@
 Date: 2026-10-27 · Branch: `claude/upbeat-turing-eqc3m4` · Upstream base: Misskey **2026.10.1**,
 commit `d9b1fc50ad4d57f708b9d6bc6fa7a763bb18602f`.
 
-**PHASE 1 STATUS: COMPLETE WITH WARNINGS** – all steps were executed; the warnings are listed in
-§11 and are either environment limitations of the verification sandbox or items that need a human decision.
+**PHASE 1 STATUS: COMPLETE WITH WARNINGS** – all steps were executed and re-verified (final run recorded below);
+the warnings are listed in §11 and are either environment limitations of the verification sandbox or items that
+need a human decision.
 
 > Important context: the Phase 1 reports referenced by the task (`docs/amixof-inventory.md`,
 > `docs/audit/UPSTREAM_AUDIT.md`) and the "existing devcontainer changes" were **not present** in the
@@ -40,9 +41,12 @@ commit `d9b1fc50ad4d57f708b9d6bc6fa7a763bb18602f`.
 | Dedicated database | `init.sh` creates role `amixof` (`LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE`) and database `amixof` owned by it, idempotently; the compose `db` service and its `misskey` default database are untouched |
 | Preserve DB / Redis config | `devcontainer.yml` keeps host `db`/`redis`; DB name/credentials come from `DATABASE_DB/USER/PASSWORD` (supported by `packages/backend/src/config.ts:281-283`); Redis split into db 0/1/2/3 with prefix `amixof` |
 
-**Not verified:** a container rebuild. The sandbox has a Docker client but no daemon, so `devcontainer up`
-could not run. Syntax of all files was validated (`bash -n`, JSON/YAML parse). First rebuild on a developer
-machine must be observed; persistent volumes are not touched by the changes.
+**Verification of this section** (details in `docs/audit/DEV_ENVIRONMENT_VERIFICATION.md`): in a later pass a Docker
+daemon was started in the sandbox. The modified `Dockerfile` builds (FFmpeg 7.1.5, `psql` 17.11), and the
+provisioning section of `init.sh` was run twice against a throwaway `postgres:18-alpine` (**18.6**): it created
+`.config/amixof.env` (mode 600), the least-privilege `amixof` role and database, was idempotent, and left the
+`misskey` database alone. **Still not verified:** a full `devcontainer up` (ghcr.io `node`/`pnpm` features, so the
+in-container Node 26.12.1 / pnpm 12.14.0 pins are configured but unobserved).
 
 ## 3. PostgreSQL verification
 
@@ -89,14 +93,14 @@ the configuration is a property of the deployment (devcontainer: `redis-data` na
 | TypeScript | `tsc --noEmit` (backend `src` and `test` projects) | PASS |
 | Lint / format | `pnpm lint` (all packages + repository declaration files) | PASS (exit 0) |
 | SPDX / locale safety | `node scripts/check-shipping.mjs` | PASS / PASS |
-| Migration consistency | `pnpm --filter backend check-migrations` | PASS |
-| Backend unit | `pnpm --filter backend test` | **860 passed, 1 failed, 18 skipped** (879). Failed: `test/unit/SearchService.ts > meilisearch` (needs a Meilisearch server on 127.0.0.1:57712 – not available). First run before the `test-misskey` database existed: 368/102/405 – environmental, superseded |
-| Backend e2e | `pnpm --filter backend test:e2e` | **1360 passed, 6 failed, 2 skipped, 20 todo** (1388). 5 failures: `synalio/abuse-report.ts` (4) and `synalio/user-create.ts` (1) – SystemWebhook tests that POST to `http://localhost:15080`; the backend resolves hosts through `cacheable-lookup`/DNS and this sandbox's resolvers (8.8.8.8) do not resolve `localhost` → `ENOTFOUND`. Code is not at fault. 1 failure: the new "resetting a password invalidates the existing session" test raced the async cache invalidation; fixed by invalidating the native-token cache synchronously in `UserAuthService.regenerateNativeToken` and polling in the test. Re-run of `test/e2e/endpoints.ts` after the fix (and again after the API review changes): **100 passed / 0 failed** (includes 9 new security regression tests) |
+| Migration consistency | `pnpm --filter backend check-migrations` | PASS ("All migrations are clean") |
+| Backend unit | `pnpm --filter backend test` | **864 passed, 0 failed, 18 skipped** (882) in the final run, except that `test/unit/SearchService.ts > meilisearch` needs a Meilisearch server: without one the run reports **1 failed file**; with Meilisearch **1.53.1** (the CI version, started in Docker on 127.0.0.1:57712) that file passes: **32/32** |
+| Backend e2e | `pnpm --filter backend test:e2e` | **1370 passed, 5 failed, 2 skipped, 20 todo** (1397) in the final run. The 5 failures are the `synalio/abuse-report.ts` (4) and `synalio/user-create.ts` (1) SystemWebhook tests, which POST to `http://localhost:15080`; the sandbox's DNS cannot resolve `localhost` through `cacheable-lookup`. **With a local DNS stub that answers `localhost`, both files pass: 11/11** (resolv.conf restored afterwards). No failure is caused by repository code. `test/e2e/endpoints.ts` alone: 108 passed |
 | Frontend unit | `pnpm --filter frontend test` | **165 passed** (18 files) |
 | misskey-js | `pnpm --filter misskey-js test` (vitest + `tsd`) | **14 passed**, type tests PASS |
 | Media processing with FFmpeg | unit `test/unit/server/FileServerService.ts`, `test/unit/FileInfoService.ts`, DriveService | PASS inside the unit run (FFmpeg present). The "2 failures attributed to missing FFmpeg" in the earlier report do not reproduce here |
 | Browser e2e (Playwright) | `pnpm e2e` | see §5.1 |
-| Federation baseline | `pnpm --filter backend test:fed` (`test-federation/`, two Dockerised servers) | **NOT RUN** – requires Docker Compose; no daemon in the sandbox. Must be recorded on a Docker-capable machine before Phase 2 |
+| Federation baseline | `docker compose run --no-deps --rm tester` in `packages/backend/test-federation/` (two servers, PostgreSQL 18.6) | **9 test files passed; 93 passed, 13 skipped, 0 failed** (106). Details and procedure: `docs/audit/FEDERATION_BASELINE.md` |
 
 ### 5.1 Browser e2e
 `pnpm e2e` (Playwright 1.64.1, `packages/frontend/test/e2e/{basic,router}.spec.ts`) against a test server on
@@ -114,17 +118,18 @@ Full analysis: `docs/audit/UPSTREAM_AUDIT.md`.
 
 | # | Finding | Severity | Status |
 | --- | --- | --- | --- |
-| 1 | Missing CSP on SPA/API | Medium | Open – documented policy proposal; needs browser testing (Report-Only first) |
+| 1 | Missing CSP on SPA/API | Medium | **Mitigated in report-only mode**: `Content-Security-Policy-Report-Only` on all HTML documents; browser crawl found only 2 inline-script violations (`base.tsx`); **not enforced** – plan in `docs/audit/CSP_REPORT_ONLY.md` |
 | 2 | Missing `X-Content-Type-Options: nosniff` | Medium | **Fixed** (`ServerService.ts`, global hook) – verified live on `/`, `/api/*`, `/files/*`, `/sw.js`, `/manifest.json`, `/nodeinfo/2.1`; e2e test |
-| 3 | Sessions survive password change/reset | Medium | **Partially fixed**: `reset-password` and `admin/reset-password` (when resetting another user) rotate the native token (`UserAuthService.regenerateNativeToken`); a staff self-reset keeps the caller's session; `i/change-password` unchanged pending product decision; app tokens not revoked |
+| 3 | Sessions survive password change/reset | Medium | **Fixed**: `i/change-password`, `reset-password` and `admin/reset-password` (other user) rotate the native token (`UserAuthService.regenerateNativeToken`), revoking every session; a staff self-reset keeps the caller's session. Policy: third-party application tokens are **not** revoked (documented in `UPSTREAM_AUDIT.md`) |
 | 4 | Moderator can reset other moderators | High | **Fixed** (`admin/reset-password.ts`) – e2e tests |
+| 4b | Moderator can disable another moderator's / administrator's MFA (`admin/unset-mfa`) – found during this phase | High | **Fixed** (`admin/unset-mfa.ts`): same permission matrix as password reset; administrators keep the recovery path; 5 e2e tests |
 | 5 | Secrets in moderation log | Medium | **Fixed** (`misc/redact-server-settings.ts`, `admin/update-meta.ts`) – unit tests; historic rows on real DBs need scrubbing |
 | 6 | Dev mode disables protections | Low | Documented; operational requirement `NODE_ENV=production` |
 | 7 | Dependency advisories (3 high / 13 moderate / 5 low) | High (runtime `ip-address` only) | Open – no upgrades performed by instruction |
 | 8 | Licence review | Info | Documented in `AGPL_COMPLIANCE.md` |
 | 9 | Twemoji CC-BY attribution | Medium (legal) | Open – schedule with about-page rebrand |
 
-Must be resolved before public deployment: 1 (at least Report-Only + review), 3 (decision), 5 (scrub existing
+Must be resolved before public deployment: 1 (enforce after the plan in `CSP_REPORT_ONLY.md`), 5 (scrub existing
 rows if migrating an existing DB), 6 (deployment checklist), 7 (`ip-address`), 9, plus `repositoryUrl`.
 
 ## 7. AGPL and attribution review status
@@ -144,25 +149,32 @@ Security: `packages/backend/src/server/ServerService.ts`, `packages/backend/src/
 `packages/backend/src/server/api/endpoints/admin/reset-password.ts`,
 `packages/backend/src/server/api/endpoints/reset-password.ts`,
 `packages/backend/src/server/api/endpoints/admin/update-meta.ts`,
-`packages/backend/test/unit/misc/redact-server-settings.ts` (new), `packages/backend/test/e2e/endpoints.ts`.
+`packages/backend/test/unit/misc/redact-server-settings.ts` (new), `packages/backend/test/e2e/endpoints.ts`,
+`packages/backend/src/server/api/endpoints/admin/unset-mfa.ts`, `packages/backend/src/server/api/endpoints/i/change-password.ts`,
+`packages/backend/src/server/web/csp.ts` (new), `packages/backend/src/server/web/HtmlTemplateService.ts`,
+`packages/backend/test/unit/server/csp.ts` (new).
 
 Documentation: `docs/amixof-inventory.md`, `docs/AMIXOF_PROGRESS.md`, `docs/audit/UPSTREAM_AUDIT.md`,
-`docs/audit/AGPL_COMPLIANCE.md`, `docs/audit/PHASE_1_COMPLETION.md`, `docs/audit/PHASE_2_READINESS.md`.
+`docs/audit/AGPL_COMPLIANCE.md`, `docs/audit/PHASE_1_COMPLETION.md`, `docs/audit/PHASE_2_READINESS.md`,
+`docs/audit/CSP_REPORT_ONLY.md`, `docs/audit/FEDERATION_BASELINE.md`, `docs/audit/DEV_ENVIRONMENT_VERIFICATION.md`.
 
 Untracked local-only files (ignored, contain secrets, not committed): `.config/default.yml`, `.config/amixof.env`,
 `.config/test.yml`.
 
 ## 9. Commits created
 
-| Commit | Scope |
-| --- | --- |
-| `db0605c` | chore(devcontainer): make the AMIXOF dev environment reproducible |
-| `f7b6f7a` | fix(backend): harden password resets, moderation log and response headers |
-| (next) | docs(amixof): Phase 1 inventory, audit, AGPL notes, completion report, Phase 2 readiness |
+| Commit | Scope | Pushed |
+| --- | --- | --- |
+| `db0605c` | chore(devcontainer): make the AMIXOF dev environment reproducible | yes |
+| `f7b6f7a` | fix(backend): harden password resets, moderation log and response headers | yes |
+| `48f086e` | docs(amixof): Phase 1 inventory, audit, AGPL notes, completion report, Phase 2 readiness | yes |
+| `fe912cc` | fix(backend): restrict MFA removal between staff and revoke sessions on password change | no |
+| `5a049fd` | feat(backend): add Content-Security-Policy in report-only mode | no |
+| (latest, see `git log`) | docs(amixof): final Phase 1 verification, federation baseline, environment verification | no |
 
-All three are on `claude/upbeat-turing-eqc3m4` on top of upstream `d9b1fc5`.
+All on `claude/upbeat-turing-eqc3m4` on top of upstream `d9b1fc5`. The first three were pushed to `origin` on explicit
+authorization; the last three are local only.
 
-Nothing was pushed (explicit authorization required).
 
 ## 10. Exact verification commands
 
@@ -205,16 +217,21 @@ pnpm e2e
 
 ## 11. Remaining risks and blockers
 
-1. **Devcontainer rebuild unverified** (no Docker daemon in the sandbox).
-2. **Meilisearch unit test** and **5 webhook e2e tests** fail only because of missing infrastructure (Meilisearch
-   server; a resolver for `localhost`). Re-run in CI/devcontainer to confirm green.
-3. **Federation baseline not recorded** (Docker-based two-server suite). Required before federation is changed.
-4. **Open security items**: CSP, `i/change-password` policy, `ip-address` advisory, Twemoji attribution,
-   scrubbing historic moderation-log rows on any pre-existing database.
-5. **AGPL**: `repositoryUrl` must point at the public fork (or tarball publishing enabled) before public launch;
+1. **Full devcontainer rebuild (`devcontainer up` with the `node`/`pnpm` features) unverified.** The Dockerfile build and
+   the `init.sh` provisioning were exercised with Docker; the ghcr.io features and in-container Node 26.12.1 / pnpm
+   12.14.0 pinning were not. See `docs/audit/DEV_ENVIRONMENT_VERIFICATION.md`.
+2. **Test infrastructure caveats (no code defect):** the Meilisearch unit test needs a Meilisearch 1.53.1 server and the
+   5 SystemWebhook e2e tests need `localhost` to resolve through DNS. Both pass when that infrastructure exists
+   (verified here); a stock CI/devcontainer provides it.
+3. **PostgreSQL version:** the sandbox's application database is 16.15; 18.6 (the project's target) was verified in
+   containers (federation stack, init.sh test) but the full backend matrix was not run against 18.6.
+4. **Open security items:** CSP enforcement (inline scripts to be hashed), `ip-address` advisory (3 high / 13 moderate /
+   5 low overall), Twemoji CC-BY attribution, third-party application tokens survive password changes (documented
+   policy), scrubbing historic moderation-log rows on any pre-existing database.
+5. **AGPL:** `repositoryUrl` must point at the public fork (or tarball publishing enabled) before public launch;
    legal review pending.
-6. **Dependency install workaround**: in networks that block `codeload.github.com`, the two GitHub-hosted dev
-   deps must be mirrored (consider vendoring or switching to npm-published versions in Phase 2).
+6. **Dependency install workaround:** where `codeload.github.com` is blocked, the two GitHub-hosted dev deps must be
+   mirrored (consider vendoring or npm-published versions in Phase 2).
 7. The Phase 1 documents were regenerated; the earlier, uncommitted versions could not be reviewed.
 
 ## 12. Reproducible development startup

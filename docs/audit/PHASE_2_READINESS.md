@@ -108,9 +108,17 @@ New tests to add **before** touching federation code:
   the 349 upstream migrations must stay untouched to keep upstream merges possible.
 * Purge of existing remote rows (none in a fresh AMIXOF DB) can use the existing clean jobs.
 
-## 7. Outstanding Phase 1 blockers carried into Phase 2
+## 7. Outstanding Phase 1 blockers
 
-See `PHASE_1_COMPLETION.md` → "Remaining risks and blockers". In short: CSP rollout, `i/change-password`
-session policy decision, dependency bumps (`ip-address`), Twemoji attribution, `repositoryUrl` for AGPL source
-offer, devcontainer rebuild could not be exercised in this sandbox (no Docker daemon), Meilisearch-dependent
-unit test and browser/federation e2e suites not run here.
+None of these blocks starting Phase 2 work; they block a public launch (see `PHASE_1_COMPLETION.md` §11):
+CSP enforcement, `ip-address` advisory, Twemoji attribution, `repositoryUrl`/AGPL source offer and legal review, and
+the unobserved full devcontainer rebuild. **The federation baseline is now recorded** (93 passed, 13 skipped, 0 failed;
+`docs/audit/FEDERATION_BASELINE.md`), so the earlier precondition is met.
+
+## 8. Design input for Phase 2 (from the product owner, not yet implemented)
+
+Premium editorial look, coral-red gradients (`#FF5058` coral, `#E53940` red, `#C62832` deep red, `#FF8B91` pink,
+`#48232C` burgundy), layered neutral surfaces, subtle glows, coordinated light/dark themes. Implement it through
+Misskey's theme system (`packages/frontend-shared/themes/*.json5` and CSS variables), not by copying WordPress/PeepSo
+selectors from the design notes. Recommended order: design tokens and two built-in themes, brand assets, then
+components in controlled batches.

@@ -7,17 +7,22 @@
 
 | # | Finding | Verified | Severity | Status | Block public launch? |
 | --- | --- | --- | --- | --- | --- |
-| 1 | No Content-Security-Policy on the SPA / API responses | Confirmed | Medium | Open (needs browser testing) | Recommended, roll out as `Report-Only` first |
+| 1 | No Content-Security-Policy on the SPA / API responses | Confirmed | Medium | **Report-only deployed**, not enforced (`CSP_REPORT_ONLY.md`) | Enforce before launch after inline scripts are hashed |
 | 2 | No `X-Content-Type-Options: nosniff` | Confirmed | Medium | **Fixed** | — |
-| 3 | Sessions stay valid after password change / reset | Confirmed | Medium | **Partially fixed** (reset flows) | Yes for the remaining gap decision |
+| 3 | Sessions stay valid after password change / reset | Confirmed | Medium | **Fixed** (change, self-service reset, staff reset); app tokens policy documented | — |
 | 4 | Moderators can reset other moderators' passwords | Confirmed | High | **Fixed** | — |
 | 5 | Secrets written to moderation log on settings change | Confirmed | Medium | **Fixed** (new entries); old rows need scrubbing on real DBs | Yes (scrub step) |
 | 6 | Dev mode disables production protections | Confirmed (by design) | Low / Info | Documented | Yes (operational check `NODE_ENV=production`) |
 | 7 | 3 high-severity dependency advisories | Confirmed (3 high / 13 moderate / 5 low) | High (one runtime path) | Open (needs dependency bump) | Yes for `ip-address` |
 | 8 | Dependencies needing licence review | Reviewed | Info | Documented in `AGPL_COMPLIANCE.md` | Legal review |
 | 9 | Missing CC-BY attribution for Twemoji | Confirmed | Medium (legal) | Open | Yes |
+| 10 | Moderator can disable another moderator's / administrator's MFA (`admin/unset-mfa`) – new in this phase | Confirmed | High | **Fixed** | — |
 
 ## 1. Content-Security-Policy
+
+> **Update:** a `Content-Security-Policy-Report-Only` header is now sent on all HTML documents (`server/web/csp.ts`,
+> applied in `HtmlTemplateService.replyHtml`). A browser crawl found only two inline-script violations. Nothing is
+> enforced yet. Findings and the enforcement plan: `docs/audit/CSP_REPORT_ONLY.md`. The analysis below is the original one.
 
 * **Files**: `packages/backend/src/server/web/ClientServerService.ts` (SPA shell, `onRequest` hook at line 210 only
   sets `X-Frame-Options: DENY`), `packages/backend/src/server/api/ApiServerService.ts` (API, no CSP),
@@ -63,11 +68,18 @@
   `401 AUTHENTICATION_FAILED` on the next call and must sign in with the new password.
 * **Tests**: `endpoints.ts` → `admin/reset-password` ("resetting a password invalidates the existing session…")
   and `reset-password (self service)`.
-* **Remaining gap (product decision required)**: `i/change-password` does **not** rotate the token, because
-  Misskey has a single native token per user – rotating it also logs out the client performing the change.
-  Options: (a) rotate and let the frontend re-login transparently (frontend change), (b) add an opt-in
-  `logoutOtherSessions` flag once per-session tokens exist. Third-party `access_token` rows are not revoked by
-  any flow; consider revoking them on reset.
+* **`i/change-password` (fixed in the follow-up pass)**: after a successful change it calls the same
+  `regenerateNativeToken`. Misskey has one native token per user, so the caller's own session is revoked too and the
+  client shows its sign-in dialog (the same behaviour as `i/regenerate-token`). Keeping the current device signed in
+  would need a new response field carrying the rotated token plus a frontend token swap (an API and misskey-js
+  change); it is possible but was left out deliberately.
+* **Third-party application tokens (policy)**: tokens in the `access_token` table (OAuth/MiAuth apps) are scoped
+  authorizations that are individually revocable (`i/revoke-token`, `i/authorized-apps`). A password change does
+  **not** revoke them, so integrations keep working. Risk: an attacker who authorized an app keeps that access until
+  the user revokes it. Recommended follow-up: show the authorized apps in the password-change confirmation, or add an
+  opt-in "revoke all apps" flag. Covered by an e2e test that asserts the current policy.
+* **Tests**: `endpoints.ts` → `i/change-password` (3 tests: session revoked and new password signs in; wrong current
+  password keeps the session; app token survives).
 
 ## 4. Moderator → moderator password reset
 
@@ -78,6 +90,16 @@
   self-only. Error code unchanged (`ACCESS_DENIED`), no API schema change → no `misskey-js` regeneration needed.
 * **Tests**: `endpoints.ts` → `admin/reset-password` (moderator→moderator denied, moderator→admin denied,
   admin→moderator allowed).
+
+## 4b. Moderator → moderator MFA removal (`admin/unset-mfa`)
+
+* **File**: `packages/backend/src/server/api/endpoints/admin/unset-mfa.ts` (`requireModerator: true`). Same defect as
+  finding 4: only administrator targets were protected, so a moderator could delete another moderator's passkeys and TOTP
+  (and disable passwordless login), removing the second factor before a takeover.
+* **Fix**: a moderator target can only be changed by an administrator or by themselves; administrators stay self-only.
+  Administrators keep the recovery path for locked-out moderators. No API schema change.
+* **Tests**: `endpoints.ts` → `admin/unset-mfa` (5 tests: moderator→moderator denied, moderator→administrator denied,
+  moderator→ordinary user allowed, administrator→moderator allowed, self allowed; the MFA flag is checked in the database).
 
 ## 5. Secrets in the moderation log
 
