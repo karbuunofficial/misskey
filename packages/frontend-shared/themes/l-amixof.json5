@@ -1,0 +1,30 @@
+{
+	id: '0ea2d0aa-750b-439c-b3ca-7351b95cdad8',
+
+	name: 'AMIXOF Light',
+	author: 'AMIXOF',
+	desc: 'AMIXOF default light theme: layered neutral surfaces with the coral-red brand accent',
+
+	base: 'light',
+
+	props: {
+		// Brand red is used for text-on-white accents (4.2:1 on white); coral stays for indicators and focus.
+		accent: '@brandRed',
+		accentedBg: ':alpha<0.12<@brandCoral',
+		focus: ':alpha<0.35<@brandCoral',
+		indicator: '@brandCoral',
+		// Surfaces: page / feed / secondary
+		bg: '#F5F6F9',
+		panel: '#FFFFFF',
+		panelHighlight: '#F1F2F5',
+		panelHeaderBg: '#FFFFFF',
+		navBg: '#FFFFFF',
+		buttonBg: '#F1F2F5',
+		buttonHoverBg: ':darken<4<#F1F2F5',
+		fg: '#3A3640',
+		fgOnWhite: '@brandRed',
+		divider: 'rgba(37, 29, 41, 0.1)',
+		love: '@brandRed',
+		mentionMe: '@brandDeepRed',
+	},
+}

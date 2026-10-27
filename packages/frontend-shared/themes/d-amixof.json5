@@ -1,0 +1,30 @@
+{
+	id: '49e99c65-58f3-46c2-93cb-fa19102281bc',
+
+	name: 'AMIXOF Dark',
+	author: 'AMIXOF',
+	desc: 'AMIXOF default dark theme: layered near-black surfaces with the coral brand accent',
+
+	base: 'dark',
+
+	props: {
+		accent: '@brandCoral',
+		accentedBg: ':alpha<0.16<@brandCoral',
+		focus: ':alpha<0.4<@brandCoral',
+		indicator: '@brandCoral',
+		// Surfaces: page / feed / secondary
+		bg: '#0C0C11',
+		panel: '#14131B',
+		panelHighlight: '#22212B',
+		panelHeaderBg: '#14131B',
+		navBg: '#14131B',
+		buttonBg: '#22212B',
+		buttonHoverBg: ':lighten<4<#22212B',
+		fg: '#D3D1DB',
+		fgHighlighted: '#FFFFFF',
+		fgOnWhite: '@brandRed',
+		divider: 'rgba(255, 255, 255, 0.09)',
+		love: '@brandPink',
+		mentionMe: '@brandPink',
+	},
+}

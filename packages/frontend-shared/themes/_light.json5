@@ -71,6 +71,12 @@
 		codeBoolean: '#62b70c',
 		deckBg: ':darken<3<@bg',
 		htmlThemeColor: '@bg',
+		// AMIXOF brand palette (reusable as var(--MI_THEME-brandCoral) etc.; identical in every theme)
+		brandCoral: '#FF5058',
+		brandRed: '#E53940',
+		brandDeepRed: '#C62832',
+		brandPink: '#FF8B91',
+		brandBurgundy: '#48232C',
 	},
 
 	codeHighlighter: {

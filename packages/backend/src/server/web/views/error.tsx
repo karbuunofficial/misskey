@@ -21,7 +21,7 @@ export function ErrorPage(props: {
 					<meta name="application-name" content="Misskey" />
 					<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 					<meta name="referrer" content="origin" />
-					<title safe>{props.title ?? 'An error has occurred... | Misskey'}</title>
+					<title safe>{props.title ?? 'An error has occurred... | AMIXOF'}</title>
 					<link rel="stylesheet" href="/static-assets/misc/error.css" />
 					<script src="/static-assets/misc/error.js"></script>
 				</head>
@@ -64,7 +64,7 @@ export function ErrorPage(props: {
 					<p data-i18n="solution3">Clear your browser cache</p>
 					<p data-i18n="solution4">(Tor Browser) Set dom.webaudio.enabled to true</p>
 
-					<details style="color: #86b300;">
+					<details style="color: #FF5058;">
 						<summary data-i18n="otherOption">Other options</summary>
 						<a href="/flush">
 							<button class="button-small">

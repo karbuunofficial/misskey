@@ -19,8 +19,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 				<div><MkCondensedLine :minScale="2 / 3">{{ acct }}</MkCondensedLine></div>
 			</div>
 		</div>
-		<img v-if="deviceMotionPermissionNeeded" v-flip :class="$style.logo" :src="misskeysvg" alt="Misskey Logo" @click="requestDeviceMotion"/>
-		<img v-else v-flip :class="$style.logo" :src="misskeysvg" alt="Misskey Logo"/>
+		<MkAmixofLogo v-if="deviceMotionPermissionNeeded" v-flip scheme="dark" :class="$style.logo" @click="requestDeviceMotion"/>
+		<MkAmixofLogo v-else v-flip scheme="dark" :class="$style.logo"/>
 	</div>
 </div>
 </template>
@@ -34,7 +34,7 @@ import type { Directive } from 'vue';
 import { instance } from '@/instance.js';
 import { ensureSignin } from '@/i.js';
 import { userPage, userName } from '@@/js/user.js';
-import misskeysvg from '/client-assets/misskey.svg';
+import MkAmixofLogo from '@/components/MkAmixofLogo.vue';
 import { getStaticImageUrl } from '@/utility/media-proxy.js';
 import { i18n } from '@/i18n.js';
 
