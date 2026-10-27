@@ -127,34 +127,42 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</template>
 			</MkReactionsViewer>
 			<footer :class="$style.footer">
-				<button ref="reactButton" :class="$style.footerButton" class="_button" @click="handleToggleReact()">
+				<button ref="reactButton" v-tooltip.noDelay="i18n.ts.reaction" :class="$style.footerButton" class="_button" :aria-label="i18n.ts.reaction" @click="handleToggleReact()">
 					<i v-if="appearNote.reactionAcceptance === 'likeOnly' && $appearNote.myReaction != null" class="ti ti-heart-filled" style="color: var(--MI_THEME-love);"></i>
 					<i v-else-if="$appearNote.myReaction != null" class="ti ti-minus" style="color: var(--MI_THEME-accent);"></i>
 					<i v-else-if="appearNote.reactionAcceptance === 'likeOnly'" class="ti ti-heart"></i>
 					<i v-else class="ti ti-plus"></i>
 					<p v-if="(appearNote.reactionAcceptance === 'likeOnly' || prefer.s.showReactionsCount) && $appearNote.reactionCount > 0" :class="$style.footerButtonCount">{{ number($appearNote.reactionCount) }}</p>
 				</button>
-				<button :class="$style.footerButton" class="_button" @click="reply()">
+				<button v-tooltip.noDelay="i18n.ts.reply" :class="$style.footerButton" class="_button" :aria-label="i18n.ts.reply" @click="reply()">
 					<i class="ti ti-arrow-back-up"></i>
 					<p v-if="appearNote.repliesCount > 0" :class="$style.footerButtonCount">{{ number(appearNote.repliesCount) }}</p>
 				</button>
 				<button
 					v-if="canRenote"
 					ref="renoteButton"
+					v-tooltip.noDelay="i18n.ts.renote"
 					:class="$style.footerButton"
 					class="_button"
+					:aria-label="i18n.ts.renote"
 					@mousedown.prevent="renote()"
 				>
 					<i class="ti ti-repeat"></i>
 					<p v-if="appearNote.renoteCount > 0" :class="$style.footerButtonCount">{{ number(appearNote.renoteCount) }}</p>
 				</button>
-				<button v-else :class="$style.footerButton" class="_button" disabled>
+				<button v-else :class="$style.footerButton" class="_button" :aria-label="i18n.ts.renote" disabled>
 					<i class="ti ti-ban"></i>
 				</button>
-				<button v-if="prefer.s.showClipButtonInNoteFooter" ref="clipButton" :class="$style.footerButton" class="_button" @mousedown.prevent="clip()">
+				<button v-tooltip.noDelay="i18n.ts.share" :class="$style.footerButton" class="_button" :aria-label="i18n.ts.share" @click="share()">
+					<i class="ti ti-share"></i>
+				</button>
+				<button v-tooltip.noDelay="i18n.ts.favorite" :class="$style.footerButton" class="_button" :aria-label="i18n.ts.favorite" @click="toggleFavorite()">
+					<i class="ti ti-star"></i>
+				</button>
+				<button v-if="prefer.s.showClipButtonInNoteFooter" ref="clipButton" v-tooltip.noDelay="i18n.ts.clip" :class="$style.footerButton" class="_button" :aria-label="i18n.ts.clip" @mousedown.prevent="clip()">
 					<i class="ti ti-paperclip"></i>
 				</button>
-				<button ref="menuButton" :class="$style.footerButton" class="_button" @mousedown.prevent="showMenu()">
+				<button ref="menuButton" v-tooltip.noDelay="i18n.ts.menu" :class="$style.footerButton" class="_button" :aria-label="i18n.ts.menu" @mousedown.prevent="showMenu()">
 					<i class="ti ti-dots"></i>
 				</button>
 			</footer>
@@ -281,6 +289,8 @@ const {
 	onContextmenu,
 	showMenu,
 	clip,
+	share,
+	toggleFavorite,
 	showRenoteMenu,
 	blur,
 } = useNote(props, {
@@ -681,6 +691,24 @@ const keymap = {
 
 .footer {
 	margin-bottom: -14px;
+}
+
+/* AMIXOF: six actions must stay on one row even in a 320px viewport */
+@container (max-width: 400px) {
+	.root:not(.showActionsOnlyHover) .footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		max-width: 320px;
+	}
+
+	.root:not(.showActionsOnlyHover) .footerButton {
+		padding: 8px 4px;
+
+		&:not(:last-child) {
+			margin-right: 0 !important;
+		}
+	}
 }
 
 .footerButton {

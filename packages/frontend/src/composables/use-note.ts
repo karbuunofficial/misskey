@@ -9,7 +9,7 @@ import * as mfm from 'mfm-js';
 import * as Misskey from 'misskey-js';
 import { isLink } from '@@/js/is-link.js';
 import { shouldCollapsed } from '@@/js/collapsed.js';
-import { host } from '@@/js/config.js';
+import { host, url } from '@@/js/config.js';
 import { pleaseLogin } from '@/utility/please-login.js';
 import type { OpenOnRemoteOptions } from '@/utility/please-login.js';
 import { checkWordMute } from '@/utility/check-word-mute.js';
@@ -23,6 +23,8 @@ import { noteEvents, useNoteCapture } from '@/composables/use-note-capture.js';
 import { deepClone } from '@/utility/clone.js';
 import { useTooltip } from '@/composables/use-tooltip.js';
 import { claimAchievement } from '@/utility/achievements.js';
+import { copyToClipboard } from '@/utility/copy-to-clipboard.js';
+import { isSupportShare } from '@/utility/navigator.js';
 import { showMovedDialog } from '@/utility/show-moved-dialog.js';
 import { getAppearNote } from '@/utility/get-appear-note.js';
 import { prefer } from '@/preferences.js';
@@ -421,6 +423,33 @@ export function useNote(
 		}
 	}
 
+	/** Share: the native share sheet where the browser has one, otherwise the note link is copied. */
+	function share(): void {
+		if (props.mock) return;
+		const noteUrl = `${url}/notes/${appearNote.id}`;
+		if (isSupportShare()) {
+			navigator.share({
+				title: i18n.tsx.noteOf({ user: appearNote.user.name ?? appearNote.user.username }),
+				text: appearNote.text ?? '',
+				url: noteUrl,
+			});
+		} else {
+			copyToClipboard(noteUrl);
+		}
+	}
+
+	/** Favorite ("bookmark"): the current state is looked up on click, so cards do not pay a request each. */
+	async function toggleFavorite(): Promise<void> {
+		if (props.mock) return;
+		const isLoggedIn = await pleaseLogin({ openOnRemote: pleaseLoginContext });
+		if (!isLoggedIn) return;
+		const state = await misskeyApi('notes/state', { noteId: appearNote.id });
+		claimAchievement('noteFavorited1');
+		await os.apiWithDialog(state.isFavorited ? 'notes/favorites/delete' : 'notes/favorites/create', {
+			noteId: appearNote.id,
+		});
+	}
+
 	// フォーカス制御
 	function focus() { els.rootEl?.value?.focus(); }
 
@@ -458,6 +487,8 @@ export function useNote(
 		toggleReact,
 		onContextmenu,
 		showMenu,
+		share,
+		toggleFavorite,
 		clip,
 		showRenoteMenu,
 		focus,

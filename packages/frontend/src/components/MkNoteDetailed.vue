@@ -152,34 +152,42 @@ SPDX-License-Identifier: AGPL-3.0-only
 					:myReaction="$appearNote.myReaction"
 					:noteId="appearNote.id"
 				/>
-				<button class="_button" :class="$style.noteFooterButton" @click="reply()">
-					<i class="ti ti-arrow-back-up"></i>
-					<p v-if="appearNote.repliesCount > 0" :class="$style.noteFooterButtonCount">{{ number(appearNote.repliesCount) }}</p>
-				</button>
-				<button
-					v-if="canRenote"
-					ref="renoteButton"
-					class="_button"
-					:class="$style.noteFooterButton"
-					@mousedown.prevent="renote()"
-				>
-					<i class="ti ti-repeat"></i>
-					<p v-if="appearNote.renoteCount > 0" :class="$style.noteFooterButtonCount">{{ number(appearNote.renoteCount) }}</p>
-				</button>
-				<button v-else class="_button" :class="$style.noteFooterButton" disabled>
-					<i class="ti ti-ban"></i>
-				</button>
-				<button ref="reactButton" :class="$style.noteFooterButton" class="_button" @click="toggleReact()">
+				<button ref="reactButton" v-tooltip.noDelay="i18n.ts.reaction" :class="$style.noteFooterButton" class="_button" :aria-label="i18n.ts.reaction" @click="toggleReact()">
 					<i v-if="appearNote.reactionAcceptance === 'likeOnly' && $appearNote.myReaction != null" class="ti ti-heart-filled" style="color: var(--MI_THEME-love);"></i>
 					<i v-else-if="$appearNote.myReaction != null" class="ti ti-minus" style="color: var(--MI_THEME-accent);"></i>
 					<i v-else-if="appearNote.reactionAcceptance === 'likeOnly'" class="ti ti-heart"></i>
 					<i v-else class="ti ti-plus"></i>
 					<p v-if="(appearNote.reactionAcceptance === 'likeOnly' || prefer.s.showReactionsCount) && $appearNote.reactionCount > 0" :class="$style.noteFooterButtonCount">{{ number($appearNote.reactionCount) }}</p>
 				</button>
-				<button v-if="prefer.s.showClipButtonInNoteFooter" ref="clipButton" class="_button" :class="$style.noteFooterButton" @mousedown.prevent="clip()">
+				<button v-tooltip.noDelay="i18n.ts.reply" class="_button" :class="$style.noteFooterButton" :aria-label="i18n.ts.reply" @click="reply()">
+					<i class="ti ti-arrow-back-up"></i>
+					<p v-if="appearNote.repliesCount > 0" :class="$style.noteFooterButtonCount">{{ number(appearNote.repliesCount) }}</p>
+				</button>
+				<button
+					v-if="canRenote"
+					ref="renoteButton"
+					v-tooltip.noDelay="i18n.ts.renote"
+					class="_button"
+					:class="$style.noteFooterButton"
+					:aria-label="i18n.ts.renote"
+					@mousedown.prevent="renote()"
+				>
+					<i class="ti ti-repeat"></i>
+					<p v-if="appearNote.renoteCount > 0" :class="$style.noteFooterButtonCount">{{ number(appearNote.renoteCount) }}</p>
+				</button>
+				<button v-else class="_button" :class="$style.noteFooterButton" :aria-label="i18n.ts.renote" disabled>
+					<i class="ti ti-ban"></i>
+				</button>
+				<button v-tooltip.noDelay="i18n.ts.share" class="_button" :class="$style.noteFooterButton" :aria-label="i18n.ts.share" @click="share()">
+					<i class="ti ti-share"></i>
+				</button>
+				<button v-tooltip.noDelay="i18n.ts.favorite" class="_button" :class="$style.noteFooterButton" :aria-label="i18n.ts.favorite" @click="toggleFavorite()">
+					<i class="ti ti-star"></i>
+				</button>
+				<button v-if="prefer.s.showClipButtonInNoteFooter" ref="clipButton" v-tooltip.noDelay="i18n.ts.clip" class="_button" :class="$style.noteFooterButton" :aria-label="i18n.ts.clip" @mousedown.prevent="clip()">
 					<i class="ti ti-paperclip"></i>
 				</button>
-				<button ref="menuButton" class="_button" :class="$style.noteFooterButton" @mousedown.prevent="showMenu()">
+				<button ref="menuButton" v-tooltip.noDelay="i18n.ts.menu" class="_button" :class="$style.noteFooterButton" :aria-label="i18n.ts.menu" @mousedown.prevent="showMenu()">
 					<i class="ti ti-dots"></i>
 				</button>
 			</footer>
@@ -313,6 +321,8 @@ const {
 	onContextmenu,
 	showMenu,
 	clip,
+	share,
+	toggleFavorite,
 	showRenoteMenu,
 	blur,
 } = useNote(props, {
@@ -611,6 +621,17 @@ const keymap = {
 	margin: 16px 0;
 	opacity: 0.7;
 	font-size: 0.9em;
+}
+
+/* AMIXOF: keep the six actions on one row down to a 320px viewport */
+@container (max-width: 400px) {
+	.noteFooterButton {
+		padding: 8px 4px;
+
+		&:not(:last-child) {
+			margin-right: 6px !important;
+		}
+	}
 }
 
 .noteFooterButton {

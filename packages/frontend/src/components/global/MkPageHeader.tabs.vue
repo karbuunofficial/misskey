@@ -222,6 +222,17 @@ onUnmounted(() => {
 	white-space: nowrap;
 }
 
+/* AMIXOF: on phones only the active tab keeps its label so every tab stays reachable */
+@media (max-width: 500px) {
+	.tab:not(.active) .tabTitle {
+		display: none;
+	}
+
+	.tab:not(.active) .tabIcon + .tabTitle {
+		padding-left: 0;
+	}
+}
+
 .tab {
 	display: inline-block;
 	position: relative;
