@@ -188,9 +188,16 @@ $widgets-hide-threshold: 1090px;
 	height: 100%;
 	box-sizing: border-box;
 	overflow: auto;
-	padding: var(--MI-margin) var(--MI-margin) calc(var(--MI-margin) + env(safe-area-inset-bottom, 0px));
+	padding: 24px 21px calc(24px + env(safe-area-inset-bottom, 0px));
 	border-left: solid 1px var(--MI_THEME-divider);
 	background: var(--MI_THEME-bg);
+
+	/* AMIXOF: widgets are soft tinted cards without borders */
+	:global(._panel) {
+		background: var(--MI_THEME-panelHighlight);
+		border-radius: 11px;
+		box-shadow: none;
+	}
 
 	@media (max-width: $widgets-hide-threshold) {
 		display: none;

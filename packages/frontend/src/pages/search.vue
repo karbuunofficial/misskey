@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <template>
 <PageWithHeader v-model:tab="tab" :actions="headerActions" :tabs="headerTabs" :swipable="true">
-	<div v-if="tab === 'note'" class="_spacer" style="--MI_SPACER-w: 800px;">
+	<div v-if="tab === 'note'" class="_spacer _amixofPage" style="--MI_SPACER-w: 800px;">
 		<div v-if="notesSearchAvailable || ignoreNotesSearchAvailable">
 			<XNote v-bind="props"/>
 		</div>
@@ -14,7 +14,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 		</div>
 	</div>
 
-	<div v-else-if="tab === 'user'" class="_spacer" style="--MI_SPACER-w: 800px;">
+	<div v-else-if="tab === 'user'" class="_spacer _amixofPage" style="--MI_SPACER-w: 800px;">
 		<div v-if="usersSearchAvailable">
 			<XUser v-bind="props"/>
 		</div>

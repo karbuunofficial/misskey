@@ -397,7 +397,7 @@ function menuEdit() {
 	margin-top: -32px;
 	margin-bottom: -32px;
 	pointer-events: none;
-	background: var(--MI_THEME-navBg);
+	background: linear-gradient(170deg, var(--MI_THEME-accentedBg) 0%, var(--MI_THEME-navBg) 65%);
 }
 
 .subButtonGapFillDivider {
@@ -480,8 +480,9 @@ function menuEdit() {
 			left: 0;
 			right: 0;
 			bottom: 0;
-			border-radius: 999px;
-			background: linear-gradient(90deg, var(--MI_THEME-buttonGradateA), var(--MI_THEME-buttonGradateB));
+			border-radius: 9px;
+			background: linear-gradient(110deg, var(--MI_THEME-buttonGradateA), var(--MI_THEME-buttonGradateB));
+			box-shadow: 0 3px 7px color-mix(in srgb, var(--MI_THEME-accent) 20%, transparent);
 		}
 
 		&:focus-visible {
@@ -595,8 +596,8 @@ function menuEdit() {
 				left: 0;
 				right: 0;
 				bottom: 0;
-				border-radius: 999px;
-				background: var(--MI_THEME-accentedBg);
+				border-radius: 9px;
+				background: linear-gradient(100deg, var(--MI_THEME-accentedBg), color-mix(in srgb, var(--MI_THEME-accentedBg) 55%, transparent));
 			}
 		}
 	}

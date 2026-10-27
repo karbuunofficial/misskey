@@ -251,7 +251,7 @@ export const PREF_DEF = definePreferences({
 		default: true,
 	},
 	showFixedPostForm: {
-		default: false,
+		default: true,
 	},
 	showFixedPostFormInChannel: {
 		default: false,

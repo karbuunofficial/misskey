@@ -203,6 +203,26 @@ rt {
 		background: var(--MI_THEME-panel);
 		min-height: 100%;
 	}
+
+	// Same flush surface for pages that keep their own inner padding (search, chat).
+	._spacer._amixofPage {
+		max-width: none;
+		background: var(--MI_THEME-panel);
+		min-height: 100%;
+	}
+}
+
+// Phones: the feed is flush too (no card gutters, no rounded panels), like the prototype's mobile view.
+@media (max-width: 500px) {
+	._spacer._amixofFeed {
+		padding: 0;
+		background: var(--MI_THEME-panel);
+		min-height: 100%;
+
+		._panel {
+			border-radius: 0;
+		}
+	}
 }
 
 ._forceShrinkSpacer ._spacer {

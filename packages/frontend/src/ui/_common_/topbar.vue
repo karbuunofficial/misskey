@@ -91,7 +91,7 @@ async function openAccountMenu(ev: MouseEvent) {
 
 <style lang="scss" module>
 .root {
-	--topbar-height: 56px;
+	--topbar-height: 64px;
 
 	flex-shrink: 0;
 	height: var(--topbar-height);
@@ -142,16 +142,17 @@ async function openAccountMenu(ev: MouseEvent) {
 	flex: 1;
 	min-width: 0;
 	max-width: 520px;
-	height: 38px;
+	height: 40px;
 	margin: 0 auto;
-	padding: 0 14px;
+	padding: 0 13px;
 	box-sizing: border-box;
-	border-radius: 999px;
+	border: 1px solid transparent;
+	border-radius: 9px;
 	background: var(--MI_THEME-buttonBg);
 	color: var(--MI_THEME-fg);
 
 	&:focus-within {
-		outline: 2px solid var(--MI_THEME-focus);
+		border-color: var(--MI_THEME-accent);
 	}
 }
 

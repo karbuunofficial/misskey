@@ -132,10 +132,12 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<i v-else-if="$appearNote.myReaction != null" class="ti ti-minus" style="color: var(--MI_THEME-accent);"></i>
 					<i v-else-if="appearNote.reactionAcceptance === 'likeOnly'" class="ti ti-heart"></i>
 					<i v-else class="ti ti-plus"></i>
+					<span :class="$style.footerLabel">{{ i18n.ts.reaction }}</span>
 					<p v-if="(appearNote.reactionAcceptance === 'likeOnly' || prefer.s.showReactionsCount) && $appearNote.reactionCount > 0" :class="$style.footerButtonCount">{{ number($appearNote.reactionCount) }}</p>
 				</button>
 				<button v-tooltip.noDelay="i18n.ts.reply" :class="$style.footerButton" class="_button" :aria-label="i18n.ts.reply" @click="reply()">
 					<i class="ti ti-arrow-back-up"></i>
+					<span :class="$style.footerLabel">{{ i18n.ts.reply }}</span>
 					<p v-if="appearNote.repliesCount > 0" :class="$style.footerButtonCount">{{ number(appearNote.repliesCount) }}</p>
 				</button>
 				<button
@@ -148,16 +150,20 @@ SPDX-License-Identifier: AGPL-3.0-only
 					@mousedown.prevent="renote()"
 				>
 					<i class="ti ti-repeat"></i>
+					<span :class="$style.footerLabel">{{ i18n.ts.renote }}</span>
 					<p v-if="appearNote.renoteCount > 0" :class="$style.footerButtonCount">{{ number(appearNote.renoteCount) }}</p>
 				</button>
 				<button v-else :class="$style.footerButton" class="_button" :aria-label="i18n.ts.renote" disabled>
 					<i class="ti ti-ban"></i>
+					<span :class="$style.footerLabel">{{ i18n.ts.renote }}</span>
 				</button>
 				<button v-tooltip.noDelay="i18n.ts.share" :class="$style.footerButton" class="_button" :aria-label="i18n.ts.share" @click="share()">
 					<i class="ti ti-share"></i>
+					<span :class="$style.footerLabel">{{ i18n.ts.share }}</span>
 				</button>
 				<button v-tooltip.noDelay="i18n.ts.favorite" :class="$style.footerButton" class="_button" :aria-label="i18n.ts.favorite" @click="toggleFavorite()">
 					<i class="ti ti-star"></i>
+					<span :class="$style.footerLabel">{{ i18n.ts.favorite }}</span>
 				</button>
 				<button v-if="prefer.s.showClipButtonInNoteFooter" ref="clipButton" v-tooltip.noDelay="i18n.ts.clip" :class="$style.footerButton" class="_button" :aria-label="i18n.ts.clip" @mousedown.prevent="clip()">
 					<i class="ti ti-paperclip"></i>
@@ -693,21 +699,55 @@ const keymap = {
 	margin-bottom: -14px;
 }
 
-/* AMIXOF: six actions must stay on one row even in a 320px viewport */
-@container (max-width: 400px) {
-	.root:not(.showActionsOnlyHover) .footer {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		max-width: 320px;
+/* AMIXOF: one labelled action row above a divider; the labels fold away in narrow cards */
+.root:not(.showActionsOnlyHover) .footer {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	margin-top: 10px;
+	margin-bottom: -8px;
+	padding-top: 5px;
+	border-top: 1px solid var(--MI_THEME-divider);
+}
+
+.root:not(.showActionsOnlyHover) .footerButton {
+	flex: 1 1 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 38px;
+	padding: 6px 4px;
+	border-radius: 6px;
+	font-size: 0.8em;
+
+	&:not(:last-child) {
+		margin-right: 0;
+	}
+
+	&:hover:not(:disabled) {
+		background: var(--MI_THEME-accentedBg);
+		color: var(--MI_THEME-accent);
+	}
+
+	// clip and menu stay icon-only
+	&:not(:has(.footerLabel)) {
+		flex: 0 0 auto;
+		min-width: 34px;
+	}
+}
+
+.footerLabel {
+	white-space: nowrap;
+}
+
+@container (max-width: 580px) {
+	.footerLabel {
+		display: none;
 	}
 
 	.root:not(.showActionsOnlyHover) .footerButton {
 		padding: 8px 4px;
-
-		&:not(:last-child) {
-			margin-right: 0 !important;
-		}
 	}
 }
 
@@ -727,7 +767,7 @@ const keymap = {
 
 .footerButtonCount {
 	display: inline;
-	margin: 0 0 0 8px;
+	margin: 0;
 }
 
 @container (max-width: 580px) {

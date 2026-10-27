@@ -343,6 +343,10 @@ definePage(() => ({
 /* AMIXOF desktop shell (geometry comes from the shared ._amixofFeed rule in style.scss) */
 @media (min-width: 501px) {
 	/* element + class: must beat the components' own single-class radius rules */
+	div.postForm {
+		border-bottom: 5px solid var(--MI_THEME-bg);
+	}
+
 	div.tip,
 	div.postForm {
 		margin-bottom: 0;

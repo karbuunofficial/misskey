@@ -130,7 +130,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 				</div>
 				<MkA v-if="appearNote.channel && !inChannel" :class="$style.channel" :to="`/channels/${appearNote.channel.id}`"><i class="ti ti-device-tv"></i> {{ appearNote.channel.name }}</MkA>
 			</div>
-			<footer>
+			<footer :class="$style.noteFooter">
 				<div :class="$style.noteFooterInfo">
 					<MkA :to="notePage(appearNote)">
 						<MkTime :time="appearNote.createdAt" mode="detail" colored/>
@@ -157,10 +157,12 @@ SPDX-License-Identifier: AGPL-3.0-only
 					<i v-else-if="$appearNote.myReaction != null" class="ti ti-minus" style="color: var(--MI_THEME-accent);"></i>
 					<i v-else-if="appearNote.reactionAcceptance === 'likeOnly'" class="ti ti-heart"></i>
 					<i v-else class="ti ti-plus"></i>
+					<span :class="$style.noteFooterLabel">{{ i18n.ts.reaction }}</span>
 					<p v-if="(appearNote.reactionAcceptance === 'likeOnly' || prefer.s.showReactionsCount) && $appearNote.reactionCount > 0" :class="$style.noteFooterButtonCount">{{ number($appearNote.reactionCount) }}</p>
 				</button>
 				<button v-tooltip.noDelay="i18n.ts.reply" class="_button" :class="$style.noteFooterButton" :aria-label="i18n.ts.reply" @click="reply()">
 					<i class="ti ti-arrow-back-up"></i>
+					<span :class="$style.noteFooterLabel">{{ i18n.ts.reply }}</span>
 					<p v-if="appearNote.repliesCount > 0" :class="$style.noteFooterButtonCount">{{ number(appearNote.repliesCount) }}</p>
 				</button>
 				<button
@@ -173,16 +175,20 @@ SPDX-License-Identifier: AGPL-3.0-only
 					@mousedown.prevent="renote()"
 				>
 					<i class="ti ti-repeat"></i>
+					<span :class="$style.noteFooterLabel">{{ i18n.ts.renote }}</span>
 					<p v-if="appearNote.renoteCount > 0" :class="$style.noteFooterButtonCount">{{ number(appearNote.renoteCount) }}</p>
 				</button>
 				<button v-else class="_button" :class="$style.noteFooterButton" :aria-label="i18n.ts.renote" disabled>
 					<i class="ti ti-ban"></i>
+					<span :class="$style.noteFooterLabel">{{ i18n.ts.renote }}</span>
 				</button>
 				<button v-tooltip.noDelay="i18n.ts.share" class="_button" :class="$style.noteFooterButton" :aria-label="i18n.ts.share" @click="share()">
 					<i class="ti ti-share"></i>
+					<span :class="$style.noteFooterLabel">{{ i18n.ts.share }}</span>
 				</button>
 				<button v-tooltip.noDelay="i18n.ts.favorite" class="_button" :class="$style.noteFooterButton" :aria-label="i18n.ts.favorite" @click="toggleFavorite()">
 					<i class="ti ti-star"></i>
+					<span :class="$style.noteFooterLabel">{{ i18n.ts.favorite }}</span>
 				</button>
 				<button v-if="prefer.s.showClipButtonInNoteFooter" ref="clipButton" v-tooltip.noDelay="i18n.ts.clip" class="_button" :class="$style.noteFooterButton" :aria-label="i18n.ts.clip" @mousedown.prevent="clip()">
 					<i class="ti ti-paperclip"></i>
@@ -623,28 +629,53 @@ const keymap = {
 	font-size: 0.9em;
 }
 
-/* AMIXOF: keep the six actions on one row down to a 320px viewport */
-@container (max-width: 400px) {
-	.noteFooterButton {
-		padding: 8px 4px;
+/* AMIXOF: labelled action row above a divider (the info line stays full width) */
+.noteFooter {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 2px;
+}
 
-		&:not(:last-child) {
-			margin-right: 6px !important;
-		}
-	}
+.noteFooterInfo {
+	flex: 1 0 100%;
+	margin-bottom: 4px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid var(--MI_THEME-divider);
 }
 
 .noteFooterButton {
+	flex: 1 1 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 38px;
 	margin: 0;
-	padding: 8px;
+	padding: 6px 4px;
+	border-radius: 6px;
+	font-size: 0.85em;
 	opacity: 0.7;
 
-	&:not(:last-child) {
-		margin-right: 28px;
+	&:hover:not(:disabled) {
+		background: var(--MI_THEME-accentedBg);
+		color: var(--MI_THEME-accent);
+		opacity: 1;
 	}
 
-	&:hover {
-		color: var(--MI_THEME-fgHighlighted);
+	&:not(:has(.noteFooterLabel)) {
+		flex: 0 0 auto;
+		min-width: 34px;
+	}
+}
+
+.noteFooterLabel {
+	white-space: nowrap;
+}
+
+@container (max-width: 580px) {
+	.noteFooterLabel {
+		display: none;
 	}
 }
 
