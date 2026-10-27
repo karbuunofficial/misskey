@@ -1,7 +1,7 @@
 # AMIXOF – Progress Tracker
 
-Last updated: 2026-10-27 (Phase 1 final verification on branch `claude/upbeat-turing-eqc3m4`).
-Detailed evidence: `docs/audit/PHASE_1_COMPLETION.md`.
+Last updated: 2026-10-27 (UI completion on branch `amixof/phase2-standalone`).
+Detailed evidence: `docs/audit/PHASE_1_COMPLETION.md`, `docs/audit/UI_COMPLETION.md`.
 
 ## Phase 1 – Baseline, environment, audit
 
@@ -28,6 +28,13 @@ Final verification run completed 2026-10-27 (details: `docs/audit/PHASE_1_COMPLE
 4. Twemoji CC-BY attribution with the about-page rebrand; `repositoryUrl` for the AGPL source offer; legal review.
 5. Decide whether application tokens should be revoked or surfaced on password change.
 
-## Phase 2 – Federation removal & rebranding
+## Phase 2 – Standalone network, branding, UI
 
-Not started. Waiting for the Phase 2 implementation instructions.
+| Step | Status | Notes |
+| --- | --- | --- |
+| 2A. Federation disabled (kill switch, delivery/resolve/relay guards, nodeinfo 404, admin UI hidden) | ✅ `b086030` | `docs/audit/PHASE_2A_STANDALONE.md` |
+| 2B. Brand identity (logos, icons, titles, `l-amixof` / `d-amixof` themes, brand tokens) | ✅ `c941511` | `docs/audit/PHASE_2B_BRANDING.md` |
+| 2C. Flush three-column shell, demo navigation order, Note button under the nav, React first | ✅ `5d7a2fb`, `d6d22c9` | `docs/audit/PHASE_2C_LAYOUT.md` |
+| UI completion: top bar, 1380px shell, labelled tabs, React → Reply → Renote → Share → Favorite order, flush feed on notifications / favorites / antennas / note page | ✅ `8bbc1b8`, `010ba5d`, `567d8af`, `3fb72b5` | `docs/audit/UI_COMPLETION.md`; verified at 320–1920px in both themes; tipping intentionally absent |
+
+Pushed: `8bbc1b8` and `010ba5d` (before the no-push instruction). Local only: `567d8af`, `3fb72b5`, docs. Nothing merged.

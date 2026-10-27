@@ -57,11 +57,15 @@ critical or high findings.
 | Low | only the home timeline is flush; other pages (explore, profile, notifications) keep the standard spacer |
 | Low | users with a saved menu keep their old order, and a saved `menu` is not migrated |
 
-## Remaining layout and design work (not done here)
+## Follow-up (completed after this phase; see `UI_COMPLETION.md`)
 
-1. The demo's top bar (logo, search field, theme toggle, bell, avatar) does not exist in Misskey's shell; adding it is a new
-   component, not a spacing change.
-2. Feed tabs: the demo shows `For You / Following / Local` with text labels; Misskey shows icon tabs (Home, Local, ...).
-3. Tip, Share and the creator-support card from the demo belong to features excluded from this phase.
-4. Right column content ("The conversation", "On your radar") is a widget decision.
-5. Apply the same flush treatment to the other main pages and to `MkNoteDetailed`.
+1. ~~The demo's top bar (logo, search field, theme toggle, bell, avatar) does not exist in Misskey's shell~~ – added in
+   `8bbc1b8` (`ui/_common_/topbar.vue`), together with the 1380px shell width.
+2. ~~Feed tabs: the demo shows text labels; Misskey shows icon tabs~~ – Home / Local / Social / Global now show their real
+   names (`010ba5d`); no "For You" tab.
+3. Share and Favorite buttons were added and the order unified across cards and the note page (`567d8af`); Tip and the
+   creator-support card remain excluded (no backend).
+4. Right column content ("The conversation", "On your radar") is still a widget decision.
+5. ~~Apply the same flush treatment to the other main pages and to `MkNoteDetailed`~~ – notifications, favorites, antenna
+   timelines and the note page share the `_amixofFeed` treatment (`3fb72b5`); the medium finding above (`MkNoteDetailed`
+   order) is resolved. Explore, profile, search, chat and settings keep upstream cards inside the shell.
