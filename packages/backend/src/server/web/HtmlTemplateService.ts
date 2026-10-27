@@ -16,6 +16,7 @@ import type { Manifest } from 'vite';
 import type { Config } from '@/config.js';
 import type { MiMeta } from '@/models/Meta.js';
 import type { CommonData, ViteFiles } from './views/_.js';
+import { CONTENT_SECURITY_POLICY_REPORT_ONLY } from './csp.js';
 
 @Injectable()
 export class HtmlTemplateService {
@@ -179,6 +180,10 @@ export class HtmlTemplateService {
 
 	public static async replyHtml(reply: FastifyReply, html: string | Promise<string>) {
 		reply.header('Content-Type', 'text/html; charset=utf-8');
+		// Report-only: violations are logged by the browser, nothing is blocked.
+		if (!reply.hasHeader('Content-Security-Policy')) {
+			reply.header('Content-Security-Policy-Report-Only', CONTENT_SECURITY_POLICY_REPORT_ONLY);
+		}
 		const _html = await html;
 		return reply.send(_html);
 	}
