@@ -10,9 +10,9 @@ import { describe, beforeAll, test, expect, vi } from 'vitest';
 // node-fetch only supports it's own Blob yet
 // https://github.com/node-fetch/node-fetch/pull/1664
 import { Blob } from 'node-fetch';
-import { api, castAsError, initTestDb, post, relativeFetch, role, signup, simpleGet, uploadFile } from '../utils.js';
+import { api, castAsError, createAppToken, initTestDb, post, relativeFetch, role, signup, simpleGet, uploadFile } from '../utils.js';
 import type * as misskey from 'misskey-js';
-import { MiPasswordResetRequest, MiUser } from '@/models/_.js';
+import { MiPasswordResetRequest, MiUser, MiUserProfile } from '@/models/_.js';
 import { genAidx } from '@/misc/id/aidx.js';
 
 const waitForPushToTlOptions = { timeout: 3000, interval: 25 };
@@ -1359,6 +1359,111 @@ describe('Endpoints', () => {
 			const signin = await api('signin-flow', { username: victim.username, password: 'brand-new-password' });
 			assert.strictEqual(signin.status, 200);
 			assert.strictEqual((signin.body as { finished: boolean }).finished, true);
+		});
+	});
+
+	describe('admin/unset-mfa', () => {
+		let admin: misskey.entities.SignupResponse;
+		let moderatorA: misskey.entities.SignupResponse;
+		let moderatorB: misskey.entities.SignupResponse;
+		let plainUser: misskey.entities.SignupResponse;
+
+		const setMfa = async (userId: string, enabled: boolean) => {
+			const connection = await initTestDb(true);
+			await connection.getRepository(MiUserProfile).update({ userId }, { twoFactorEnabled: enabled });
+		};
+		const hasMfa = async (userId: string) => {
+			const connection = await initTestDb(true);
+			return (await connection.getRepository(MiUserProfile).findOneByOrFail({ userId })).twoFactorEnabled;
+		};
+
+		beforeAll(async () => {
+			admin = await signup({ username: 'mfaAdmin' });
+			moderatorA = await signup({ username: 'mfaModA' });
+			moderatorB = await signup({ username: 'mfaModB' });
+			plainUser = await signup({ username: 'mfaPlain' });
+
+			const adminRole = await role(alice, { isAdministrator: true, name: 'mfa admin role' });
+			await api('admin/roles/assign', { userId: admin.id, roleId: adminRole.id }, alice);
+			const moderatorRole = await role(alice, { isModerator: true, name: 'mfa moderator role' });
+			await api('admin/roles/assign', { userId: moderatorA.id, roleId: moderatorRole.id }, alice);
+			await api('admin/roles/assign', { userId: moderatorB.id, roleId: moderatorRole.id }, alice);
+		}, 1000 * 60 * 2);
+
+		test('a moderator cannot disable the MFA of another moderator', async () => {
+			await setMfa(moderatorB.id, true);
+			const res = await api('admin/unset-mfa', { userId: moderatorB.id }, moderatorA);
+			assert.strictEqual(res.status, 400);
+			assert.strictEqual(castAsError(res.body as any).error.code, 'ACCESS_DENIED');
+			assert.strictEqual(await hasMfa(moderatorB.id), true);
+		});
+
+		test('a moderator cannot disable the MFA of an administrator', async () => {
+			await setMfa(admin.id, true);
+			const res = await api('admin/unset-mfa', { userId: admin.id }, moderatorA);
+			assert.strictEqual(res.status, 400);
+			assert.strictEqual(castAsError(res.body as any).error.code, 'ACCESS_DENIED');
+			assert.strictEqual(await hasMfa(admin.id), true);
+		});
+
+		test('a moderator can still disable the MFA of an ordinary user', async () => {
+			await setMfa(plainUser.id, true);
+			const res = await api('admin/unset-mfa', { userId: plainUser.id }, moderatorA);
+			assert.strictEqual(res.status, 204);
+			assert.strictEqual(await hasMfa(plainUser.id), false);
+		});
+
+		test('an administrator can disable the MFA of a moderator (recovery path)', async () => {
+			await setMfa(moderatorB.id, true);
+			const res = await api('admin/unset-mfa', { userId: moderatorB.id }, admin);
+			assert.strictEqual(res.status, 204);
+			assert.strictEqual(await hasMfa(moderatorB.id), false);
+		});
+
+		test('a moderator can disable their own MFA', async () => {
+			await setMfa(moderatorA.id, true);
+			const res = await api('admin/unset-mfa', { userId: moderatorA.id }, moderatorA);
+			assert.strictEqual(res.status, 204);
+			assert.strictEqual(await hasMfa(moderatorA.id), false);
+		});
+	});
+
+	describe('i/change-password', () => {
+		test('changing the password invalidates the existing session and the new password signs in', async () => {
+			const user = await signup({ username: 'changePw', password: 'old-password-1' });
+			assert.strictEqual((await api('i', {}, user)).status, 200);
+
+			const res = await api('i/change-password', { currentPassword: 'old-password-1', newPassword: 'new-password-2' }, user);
+			assert.strictEqual(res.status, 204);
+
+			// the token used for the change (and any copy of it) is revoked
+			await expect.poll(async () => (await api('i', {}, user)).status, { timeout: 3000, interval: 50 }).toBe(401);
+			assert.strictEqual((await api('i/change-password', { currentPassword: 'new-password-2', newPassword: 'x-password-3' }, user)).status, 401);
+
+			// the old password is rejected, the new one works
+			const oldSignin = await api('signin-flow', { username: user.username, password: 'old-password-1' });
+			assert.notStrictEqual(oldSignin.status, 200);
+			const newSignin = await api('signin-flow', { username: user.username, password: 'new-password-2' });
+			assert.strictEqual(newSignin.status, 200);
+			assert.strictEqual((newSignin.body as { finished: boolean }).finished, true);
+		});
+
+		test('a wrong current password changes nothing and keeps the session', async () => {
+			const user = await signup({ username: 'changePwWrong', password: 'old-password-1' });
+			const res = await api('i/change-password', { currentPassword: 'not-the-password', newPassword: 'new-password-2' }, user);
+			assert.notStrictEqual(res.status, 204);
+			assert.strictEqual((await api('i', {}, user)).status, 200);
+		});
+
+		test('third-party application tokens are not revoked by a password change', async () => {
+			const user = await signup({ username: 'changePwApp', password: 'old-password-1' });
+			const appToken = await createAppToken(user, ['read:account']);
+			assert.strictEqual((await api('i', {}, { token: appToken, bearer: true } as any)).status, 200);
+
+			const res = await api('i/change-password', { currentPassword: 'old-password-1', newPassword: 'new-password-2' }, user);
+			assert.strictEqual(res.status, 204);
+
+			assert.strictEqual((await api('i', {}, { token: appToken, bearer: true } as any)).status, 200);
 		});
 	});
 });

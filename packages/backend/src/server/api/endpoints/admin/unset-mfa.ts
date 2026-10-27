@@ -62,8 +62,17 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 				throw new ApiError(meta.errors.noSuchUser);
 			}
 
-			if (await this.roleService.isAdministrator(user) && me.id !== user.id) {
-				throw new ApiError(meta.errors.accessDenied);
+			if (me.id !== user.id) {
+				// Administrators can only be changed by themselves.
+				if (await this.roleService.isAdministrator(user)) {
+					throw new ApiError(meta.errors.accessDenied);
+				}
+
+				// Moderators can only be changed by administrators (or by themselves), so a
+				// moderator cannot strip another moderator's MFA and then take the account over.
+				if (await this.roleService.isModerator(user) && !await this.roleService.isAdministrator(me)) {
+					throw new ApiError(meta.errors.accessDenied);
+				}
 			}
 
 			await this.db.transaction(async (transactionalEntityManager) => {

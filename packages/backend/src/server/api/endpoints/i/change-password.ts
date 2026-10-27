@@ -63,6 +63,13 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			await this.userProfilesRepository.update(me.id, {
 				password: hash,
 			});
+
+			// Sign out every session that was issued with the old credentials. Misskey has a
+			// single native token per user, so this includes the caller's own session; the client
+			// is asked to sign in again with the new password (same behaviour as i/regenerate-token).
+			// Third-party application tokens (access_token) are separate, scoped authorizations and
+			// are intentionally left untouched; they can be revoked via i/revoke-token.
+			await this.userAuthService.regenerateNativeToken(me.id);
 		});
 	}
 }
