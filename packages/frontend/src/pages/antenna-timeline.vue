@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <template>
 <PageWithHeader :actions="headerActions" :tabs="headerTabs">
-	<div class="_spacer" style="--MI_SPACER-w: 800px;">
+	<div class="_spacer _amixofFeed" style="--MI_SPACER-w: 800px;">
 		<div :class="$style.tl">
 			<MkStreamingNotesTimeline
 				ref="tlEl" :key="antennaId"
@@ -72,5 +72,12 @@ definePage(() => ({
 	background: var(--MI_THEME-bg);
 	border-radius: var(--MI-radius);
 	overflow: clip;
+}
+
+@media (min-width: 501px) {
+	div.tl {
+		background: transparent;
+		border-radius: 0;
+	}
 }
 </style>

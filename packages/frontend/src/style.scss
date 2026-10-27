@@ -190,6 +190,21 @@ rt {
 	--MI_SPACER-max: initial;
 }
 
+/*
+ * AMIXOF: feed-style pages (timelines, notifications, favorites, note detail) fill their column as one
+ * continuous panel on desktop instead of a narrower floating card. Pages opt in with this class on their
+ * ._spacer and remove the radius of their own panels in the same media query. Narrow viewports keep the
+ * standard spacing.
+ */
+@media (min-width: 501px) {
+	._spacer._amixofFeed {
+		max-width: none;
+		padding: 0;
+		background: var(--MI_THEME-panel);
+		min-height: 100%;
+	}
+}
+
 ._forceShrinkSpacer ._spacer {
 	max-width: min(var(--MI_SPACER-w, 100%), calc(100% - (var(--MI_SPACER-min, 12px) * 2)));
 	padding: var(--MI_SPACER-min, 12px) 0;

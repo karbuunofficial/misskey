@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <template>
 <PageWithHeader v-model:tab="src" :actions="headerActions" :tabs="$i ? headerTabs : headerTabsWhenNotLogin" :swipable="true" :displayMyAvatar="true" :canOmitTitle="true">
-	<div class="_spacer" :class="$style.feed" style="--MI_SPACER-w: 800px;">
+	<div class="_spacer _amixofFeed" style="--MI_SPACER-w: 800px;">
 		<MkTip v-if="isBasicTimeline(src)" :k="`tl.${src}`" :class="$style.tip">
 			{{ i18n.ts._timelineDescription[src] }}
 		</MkTip>
@@ -340,19 +340,8 @@ definePage(() => ({
 	margin-bottom: var(--MI-margin);
 }
 
-/*
- * AMIXOF desktop shell: the home feed fills its column as one continuous panel (no outer gutter, no
- * floating rounded card); the column separators come from universal.vue. Narrow viewports keep the
- * standard spacing. Scoped to this page, not global.
- */
+/* AMIXOF desktop shell (geometry comes from the shared ._amixofFeed rule in style.scss) */
 @media (min-width: 501px) {
-	div.feed {
-		max-width: none;
-		padding: 0;
-		background: var(--MI_THEME-panel);
-		min-height: 100%;
-	}
-
 	/* element + class: must beat the components' own single-class radius rules */
 	div.tip,
 	div.postForm {

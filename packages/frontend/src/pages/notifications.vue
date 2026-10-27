@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <template>
 <PageWithHeader v-model:tab="tab" :actions="headerActions" :tabs="headerTabs" :swipable="true">
-	<div class="_spacer" style="--MI_SPACER-w: 800px;">
+	<div class="_spacer _amixofFeed" style="--MI_SPACER-w: 800px;">
 		<div v-if="tab === 'all'">
 			<MkStreamingNotificationsTimeline :class="$style.notifications" :excludeTypes="excludeTypes"/>
 		</div>
@@ -100,5 +100,11 @@ definePage(() => ({
 .notifications {
 	border-radius: var(--MI-radius);
 	overflow: clip;
+}
+
+@media (min-width: 501px) {
+	div.notifications {
+		border-radius: 0;
+	}
 }
 </style>

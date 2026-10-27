@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <template>
 <PageWithHeader>
-	<div class="_spacer" style="--MI_SPACER-w: 800px;">
+	<div class="_spacer _amixofFeed" style="--MI_SPACER-w: 800px;">
 		<MkPagination :paginator="paginator">
 			<template #empty><MkResult type="empty" :text="i18n.ts.noNotes"/></template>
 
@@ -39,5 +39,12 @@ definePage(() => ({
 .note {
 	background: var(--MI_THEME-panel);
 	border-radius: var(--MI-radius);
+}
+
+@media (min-width: 501px) {
+	div.note {
+		border-radius: 0;
+		border-bottom: solid 1px var(--MI_THEME-divider);
+	}
 }
 </style>

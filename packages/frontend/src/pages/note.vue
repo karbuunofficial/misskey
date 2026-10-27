@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <template>
 <PageWithHeader :actions="headerActions" :tabs="headerTabs">
-	<div class="_spacer" style="--MI_SPACER-w: 800px;">
+	<div class="_spacer _amixofFeed" style="--MI_SPACER-w: 800px;">
 		<Transition :name="prefer.s.animation ? 'fade' : ''" mode="out-in">
 			<div v-if="note">
 				<div v-if="showNext" class="_margin">
@@ -208,5 +208,13 @@ definePage(() => ({
 .note {
 	border-radius: var(--MI-radius);
 	background: var(--MI_THEME-panel);
+}
+
+@media (min-width: 501px) {
+	div.note {
+		border-radius: 0;
+		border-top: solid 1px var(--MI_THEME-divider);
+		border-bottom: solid 1px var(--MI_THEME-divider);
+	}
 }
 </style>
