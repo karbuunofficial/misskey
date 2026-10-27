@@ -273,7 +273,8 @@ const headerTabs = computed(() => [...(prefer.r.pinnedUserLists.value.map(l => (
 	key: tl,
 	title: i18n.ts._timelines[tl],
 	icon: basicTimelineIconClass(tl),
-	iconOnly: true,
+	// AMIXOF: the main timelines keep a readable label; the pickers below stay icon-only
+	iconOnly: false,
 })), {
 	icon: 'ti ti-list',
 	title: i18n.ts.lists,
@@ -295,7 +296,7 @@ const headerTabsWhenNotLogin = computed(() => [...availableBasicTimelines().map(
 	key: tl,
 	title: i18n.ts._timelines[tl],
 	icon: basicTimelineIconClass(tl),
-	iconOnly: true,
+	iconOnly: false,
 }))] as Tab[]);
 
 definePage(() => ({

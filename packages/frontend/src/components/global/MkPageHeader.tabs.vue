@@ -234,8 +234,16 @@ onUnmounted(() => {
 		opacity: 1;
 	}
 
+	&:focus-visible {
+		opacity: 1;
+		outline: 2px solid var(--MI_THEME-focus);
+		outline-offset: -4px;
+		border-radius: 6px;
+	}
+
 	&.active {
 		opacity: 1;
+		font-weight: bold;
 	}
 
 	&.animate {
