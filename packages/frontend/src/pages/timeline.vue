@@ -352,13 +352,14 @@ definePage(() => ({
 		min-height: 100%;
 	}
 
-	.tip,
-	.postForm {
+	/* element + class: must beat the components' own single-class radius rules */
+	div.tip,
+	div.postForm {
 		margin-bottom: 0;
 		border-radius: 0;
 	}
 
-	.tip {
+	div.tip {
 		border-bottom: solid 1px var(--MI_THEME-divider);
 	}
 
