@@ -4,10 +4,10 @@ SPDX-License-Identifier: AGPL-3.0-only
 -->
 
 <template>
-<div :class="[$style.root, { [$style.iconOnly]: iconOnly }]">
+<div :class="[$style.root, { [$style.iconOnly]: iconOnly, [$style.compactTop]: props.hideInstanceButton }]">
 	<div :class="$style.body">
 		<div :class="$style.top">
-			<button v-tooltip.noDelay.right="instance.name ?? i18n.ts.instance" class="_button" :class="$style.instance" @click="openInstanceMenu">
+			<button v-if="!props.hideInstanceButton" v-tooltip.noDelay.right="instance.name ?? i18n.ts.instance" class="_button" :class="$style.instance" @click="openInstanceMenu">
 				<img :src="instance.iconUrl || '/favicon.ico'" alt="" :class="$style.instanceIcon" style="view-transition-name: navbar-serverIcon;"/>
 			</button>
 			<button v-if="!iconOnly" v-tooltip.noDelay.right="i18n.ts.realtimeMode" class="_button" :class="[$style.realtimeMode, store.r.realtimeMode.value ? $style.on : null]" @click="toggleRealtimeMode">
@@ -124,6 +124,8 @@ const router = useRouter();
 const props = defineProps<{
 	showWidgetButton?: boolean;
 	asDrawer?: boolean;
+	/** The AMIXOF top bar already shows the brand, so the instance button is hidden there. */
+	hideInstanceButton?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -843,5 +845,10 @@ function menuEdit() {
 	.subButtons {
 		left: var(--nav-icon-only-width);
 	}
+}
+
+/* AMIXOF: with the top bar showing the brand, the sidebar top only holds the small toggles */
+.compactTop .top {
+	--top-height: 44px;
 }
 </style>

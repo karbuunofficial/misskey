@@ -6,9 +6,10 @@ SPDX-License-Identifier: AGPL-3.0-only
 <template>
 <div :class="[$style.root, { '_forceShrinkSpacer': deviceKind === 'smartphone' }]">
 	<XTitlebar v-if="prefer.r.showTitlebar.value" style="flex-shrink: 0;"/>
+	<XTopbar v-if="!isMobile"/>
 
 	<div :class="$style.nonTitlebarArea">
-		<XSidebar v-if="!isMobile" :class="$style.sidebar" :showWidgetButton="!showWidgetsSide" @widgetButtonClick="widgetsShowing = true"/>
+		<XSidebar v-if="!isMobile" :class="$style.sidebar" :showWidgetButton="!showWidgetsSide" :hideInstanceButton="true" @widgetButtonClick="widgetsShowing = true"/>
 
 		<div :class="[$style.contents, !isMobile && prefer.r.showTitlebar.value ? $style.withSidebarAndTitlebar : null]" @contextmenu.stop="onContextmenu">
 			<div>
@@ -43,6 +44,7 @@ import XPreferenceRestore from '@/ui/_common_/PreferenceRestore.vue';
 import XReloadSuggestion from '@/ui/_common_/ReloadSuggestion.vue';
 import XThemePreviewing from '@/ui/_common_/ThemePreviewing.vue';
 import XTitlebar from '@/ui/_common_/titlebar.vue';
+import XTopbar from '@/ui/_common_/topbar.vue';
 import XSidebar from '@/ui/_common_/navbar.vue';
 import { isPreviewMode as isThemePreviewMode } from '@/theme.js';
 import * as os from '@/os.js';
@@ -140,6 +142,17 @@ $widgets-hide-threshold: 1090px;
 	display: flex;
 	flex: 1;
 	min-height: 0;
+
+	/* AMIXOF: compact shell, centred on wide screens */
+	width: 100%;
+	max-width: 1380px;
+	margin: 0 auto;
+	box-sizing: border-box;
+
+	@media (min-width: 1382px) {
+		border-left: solid 1px var(--MI_THEME-divider);
+		border-right: solid 1px var(--MI_THEME-divider);
+	}
 }
 
 .sidebar {
