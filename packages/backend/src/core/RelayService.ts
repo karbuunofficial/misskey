@@ -15,6 +15,7 @@ import { DI } from '@/di-symbols.js';
 import { deepClone } from '@/misc/clone.js';
 import { bindThis } from '@/decorators.js';
 import { SystemAccountService } from '@/core/SystemAccountService.js';
+import { FEDERATION_ENABLED } from '@/misc/standalone.js';
 
 @Injectable()
 export class RelayService {
@@ -34,6 +35,7 @@ export class RelayService {
 
 	@bindThis
 	public async addRelay(inbox: string): Promise<MiRelay> {
+		if (!FEDERATION_ENABLED) throw new Error('federation is disabled');
 		const relay = await this.relaysRepository.insertOne({
 			id: this.idService.gen(),
 			inbox,

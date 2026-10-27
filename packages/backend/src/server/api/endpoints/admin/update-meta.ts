@@ -746,7 +746,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> { // eslint-
 			}
 
 			if (ps.federation !== undefined) {
-				set.federation = ps.federation;
+				// AMIXOF is standalone: federation can not be enabled (see misc/standalone.ts).
+				set.federation = 'none';
 			}
 
 			if (ps.deliverSuspendedSoftware !== undefined) {

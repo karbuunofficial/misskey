@@ -15,6 +15,7 @@ import { LoggerService } from '@/core/LoggerService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { bindThis } from '@/decorators.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
+import { FEDERATION_ENABLED } from '@/misc/standalone.js';
 
 type NodeInfo = {
 	openRegistrations?: unknown;
@@ -70,6 +71,7 @@ export class FetchInstanceMetadataService {
 
 	@bindThis
 	public async fetchInstanceMetadata(instance: MiInstance, force = false): Promise<void> {
+		if (!FEDERATION_ENABLED) return; // standalone: never contact other servers
 		const host = instance.host;
 
 		// finallyでunlockされてしまうのでtry内でロックチェックをしない

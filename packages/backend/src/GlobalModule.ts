@@ -15,6 +15,7 @@ import { RepositoryModule } from './models/RepositoryModule.js';
 import { allSettled } from './misc/promise-tracker.js';
 import { GlobalEvents } from './core/GlobalEventService.js';
 import type { Provider, OnApplicationShutdown } from '@nestjs/common';
+import { enforceStandalone } from '@/misc/standalone.js';
 
 const $config: Provider = {
 	provide: DI.config,
@@ -111,7 +112,7 @@ const $meta: Provider = {
 			const meta = metas[0];
 
 			if (meta) {
-				return meta;
+				return enforceStandalone(meta);
 			} else {
 				// metaが空のときfetchMetaが同時に呼ばれるとここが同時に呼ばれてしまうことがあるのでフェイルセーフなupsertを使う
 				const saved = await transactionalEntityManager
@@ -124,7 +125,7 @@ const $meta: Provider = {
 					)
 					.then((x) => transactionalEntityManager.findOneByOrFail(MiMeta, x.identifiers[0]));
 
-				return saved;
+				return enforceStandalone(saved);
 			}
 		});
 
@@ -139,6 +140,7 @@ const $meta: Provider = {
 							(meta as any)[key] = (body.after as any)[key];
 						}
 						meta.rootUser = null; // joinなカラムは通常取ってこないので
+						enforceStandalone(meta);
 						break;
 					}
 					default:

@@ -15,6 +15,7 @@ import UsersChart from '@/core/chart/charts/users.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 import { SystemAccountService } from '@/core/SystemAccountService.js';
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
+import { FEDERATION_ENABLED } from '@/misc/standalone.js';
 
 const nodeinfo2_1path = '/nodeinfo/2.1';
 const nodeinfo2_0path = '/nodeinfo/2.0';
@@ -47,6 +48,14 @@ export class NodeinfoServerService {
 
 	@bindThis
 	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void) {
+		// standalone: there is no federation to advertise, so NodeInfo is not served at all.
+		if (!FEDERATION_ENABLED) {
+			fastify.get(nodeinfo2_1path, (request, reply) => reply.code(404).send());
+			fastify.get(nodeinfo2_0path, (request, reply) => reply.code(404).send());
+			done();
+			return;
+		}
+
 		const nodeinfo2 = async (version: number) => {
 			const notesChart = await this.notesChart.getChart('hour', 1, null);
 			const localPosts = notesChart.local.total[0];

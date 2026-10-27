@@ -12,7 +12,7 @@ import { describe, beforeAll, test, expect, vi } from 'vitest';
 import { Blob } from 'node-fetch';
 import { api, castAsError, createAppToken, initTestDb, post, relativeFetch, role, signup, simpleGet, uploadFile } from '../utils.js';
 import type * as misskey from 'misskey-js';
-import { MiPasswordResetRequest, MiUser, MiUserProfile } from '@/models/_.js';
+import { MiDriveFile, MiPasswordResetRequest, MiUser, MiUserProfile } from '@/models/_.js';
 import { genAidx } from '@/misc/id/aidx.js';
 
 const waitForPushToTlOptions = { timeout: 3000, interval: 25 };
@@ -653,15 +653,11 @@ describe('Endpoints', () => {
 			const mediaType = `image/${type}`;
 
 			const getWebpublicType = async (user: misskey.entities.SignupResponse, fileId: string): Promise<string> => {
-				// drive/files/create does not expose webpublicType directly, so get it by posting it
-				const res = await post(user, {
-					text: mediaType,
-					fileIds: [fileId],
-				});
-				const apRes = await simpleGet(`notes/${res.id}`, 'application/activity+json');
-				assert.strictEqual(apRes.status, 200);
-				assert.ok(Array.isArray(apRes.body.attachment));
-				return apRes.body.attachment[0].mediaType;
+				// drive/files/create does not expose webpublicType directly, so read the stored file
+				// (this used to go through the ActivityPub note view, which is disabled in standalone mode)
+				const connection = await initTestDb(true);
+				const file = await connection.getRepository(MiDriveFile).findOneByOrFail({ id: fileId });
+				return file.webpublicType ?? file.type;
 			};
 
 			test(`透明な${type}ファイルを作成できる`, async () => {
@@ -1264,7 +1260,7 @@ describe('Endpoints', () => {
 		});
 
 		test('non-API responses carry X-Content-Type-Options: nosniff', async () => {
-			const res = await relativeFetch('nodeinfo/2.1');
+			const res = await relativeFetch('manifest.json');
 			assert.strictEqual(res.status, 200);
 			assert.strictEqual(res.headers.get('x-content-type-options'), 'nosniff');
 		});

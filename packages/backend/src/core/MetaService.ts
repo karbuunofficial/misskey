@@ -13,6 +13,7 @@ import { bindThis } from '@/decorators.js';
 import type { GlobalEvents } from '@/core/GlobalEventService.js';
 import { FeaturedService } from '@/core/FeaturedService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
+import { enforceStandalone } from '@/misc/standalone.js';
 
 @Injectable()
 export class MetaService implements OnApplicationShutdown {
@@ -51,10 +52,10 @@ export class MetaService implements OnApplicationShutdown {
 			const { type, body } = obj.message as GlobalEvents['internal']['payload'];
 			switch (type) {
 				case 'metaUpdated': {
-					this.cache = { // TODO: このあたりのデシリアライズ処理は各modelファイル内に関数としてexportしたい
+					this.cache = enforceStandalone({ // TODO: このあたりのデシリアライズ処理は各modelファイル内に関数としてexportしたい
 						...(body.after),
 						rootUser: null, // joinなカラムは通常取ってこないので
-					};
+					});
 					break;
 				}
 				default:
@@ -78,6 +79,7 @@ export class MetaService implements OnApplicationShutdown {
 			const meta = metas[0];
 
 			if (meta) {
+				enforceStandalone(meta);
 				this.cache = meta;
 				return meta;
 			} else {
@@ -92,6 +94,7 @@ export class MetaService implements OnApplicationShutdown {
 					)
 					.then((x) => transactionalEntityManager.findOneByOrFail(MiMeta, x.identifiers[0]));
 
+				enforceStandalone(saved);
 				this.cache = saved;
 				return saved;
 			}

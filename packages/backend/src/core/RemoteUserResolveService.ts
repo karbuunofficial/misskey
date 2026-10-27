@@ -18,6 +18,7 @@ import { RemoteLoggerService } from '@/core/RemoteLoggerService.js';
 import { ApDbResolverService } from '@/core/activitypub/ApDbResolverService.js';
 import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 import { bindThis } from '@/decorators.js';
+import { FEDERATION_ENABLED } from '@/misc/standalone.js';
 
 @Injectable()
 export class RemoteUserResolveService {
@@ -55,6 +56,11 @@ export class RemoteUserResolveService {
 		}
 
 		host = this.utilityService.toPuny(host);
+
+		// standalone: never look up (webfinger) or create remote users
+		if (!FEDERATION_ENABLED && host !== this.utilityService.toPuny(this.config.host)) {
+			throw new Error('federation is disabled');
+		}
 
 		if (host === this.utilityService.toPuny(this.config.host)) {
 			this.logger.info(`return local user: ${usernameLower}`);

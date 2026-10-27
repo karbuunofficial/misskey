@@ -17,7 +17,6 @@ describe('FF visibility', () => {
 	beforeAll(async () => {
 		alice = await signup({ username: 'alice' });
 		bob = await signup({ username: 'bob' });
-		await api('admin/update-meta', { federation: 'all' }, alice as misskey.entities.SignupResponse);
 	}, 1000 * 60 * 2);
 
 	test('followingVisibility, followersVisibility がともに public なユーザーのフォロー/フォロワーを誰でも見れる', async () => {
@@ -609,55 +608,14 @@ describe('FF visibility', () => {
 	});
 
 	describe('AP', () => {
-		test('followingVisibility が public 以外ならばAPからはフォローを取得できない', async () => {
-			{
-				await api('i/update', {
-					followingVisibility: 'public',
-				}, alice);
-
-				const followingRes = await simpleGet(`/users/${alice.id}/following`, 'application/activity+json');
-				assert.strictEqual(followingRes.status, 200);
-			}
-			{
-				await api('i/update', {
-					followingVisibility: 'followers',
-				}, alice);
+		// standalone: federation is disabled, so the ActivityPub collections are never served,
+		// whatever the visibility setting is (the visibility rules themselves are covered above).
+		test('APのフォロー/フォロワーコレクションは可視性に関わらず取得できない(連合無効)', async () => {
+			for (const visibility of ['public', 'followers', 'private'] as const) {
+				await api('i/update', { followingVisibility: visibility, followersVisibility: visibility }, alice);
 
 				const followingRes = await simpleGet(`/users/${alice.id}/following`, 'application/activity+json');
 				assert.strictEqual(followingRes.status, 403);
-			}
-			{
-				await api('i/update', {
-					followingVisibility: 'private',
-				}, alice);
-
-				const followingRes = await simpleGet(`/users/${alice.id}/following`, 'application/activity+json');
-				assert.strictEqual(followingRes.status, 403);
-			}
-		});
-
-		test('followersVisibility が public 以外ならばAPからはフォロワーを取得できない', async () => {
-			{
-				await api('i/update', {
-					followersVisibility: 'public',
-				}, alice);
-
-				const followersRes = await simpleGet(`/users/${alice.id}/followers`, 'application/activity+json');
-				assert.strictEqual(followersRes.status, 200);
-			}
-			{
-				await api('i/update', {
-					followersVisibility: 'followers',
-				}, alice);
-
-				const followersRes = await simpleGet(`/users/${alice.id}/followers`, 'application/activity+json');
-				assert.strictEqual(followersRes.status, 403);
-			}
-			{
-				await api('i/update', {
-					followersVisibility: 'private',
-				}, alice);
-
 				const followersRes = await simpleGet(`/users/${alice.id}/followers`, 'application/activity+json');
 				assert.strictEqual(followersRes.status, 403);
 			}

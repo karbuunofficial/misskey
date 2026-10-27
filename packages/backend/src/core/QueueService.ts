@@ -42,6 +42,7 @@ import type {
 } from './QueueModule.js';
 import type httpSignature from '@peertube/http-signature';
 import type * as Bull from 'bullmq';
+import { FEDERATION_ENABLED } from '@/misc/standalone.js';
 
 export const QUEUE_TYPES = [
 	'system',
@@ -147,6 +148,7 @@ export class QueueService {
 
 	@bindThis
 	public deliver(user: ThinUser, content: IActivity | null, to: string | null, isSharedInbox: boolean) {
+		if (!FEDERATION_ENABLED) return null; // standalone: nothing is ever delivered to other servers
 		if (content == null) return null;
 		if (to == null) return null;
 
@@ -190,6 +192,7 @@ export class QueueService {
 	 */
 	@bindThis
 	public async deliverMany(user: ThinUser, content: IActivity | null, inboxes: Map<string, boolean>) {
+		if (!FEDERATION_ENABLED) return null; // standalone: nothing is ever delivered to other servers
 		if (content == null) return null;
 		const contentBody = JSON.stringify(content);
 		const digest = ApRequestCreator.createDigest(contentBody);

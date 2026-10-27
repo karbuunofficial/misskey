@@ -252,7 +252,8 @@ SPDX-License-Identifier: AGPL-3.0-only
 					</MkFolder>
 				</SearchMarker>
 
-				<SearchMarker v-slot="slotProps" :keywords="['federation']">
+				<!-- AMIXOF is standalone: federation settings are hidden (instance.federation is always 'none'). -->
+				<SearchMarker v-if="instance.federation !== 'none'" v-slot="slotProps" :keywords="['federation']">
 					<MkFolder :defaultOpen="slotProps.isParentOfTarget">
 						<template #icon><SearchIcon><i class="ti ti-planet"></i></SearchIcon></template>
 						<template #label><SearchLabel>{{ i18n.ts.federation }}</SearchLabel></template>

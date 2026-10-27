@@ -9,22 +9,15 @@ import * as assert from 'assert';
 import { describe, test } from 'vitest';
 import { relativeFetch } from '../utils.js';
 
-describe('nodeinfo', () => {
+// AMIXOF is standalone: NodeInfo is a federation discovery document and is not served.
+describe('nodeinfo (standalone: not served)', () => {
 	test('nodeinfo 2.1', async () => {
 		const res = await relativeFetch('nodeinfo/2.1');
-		assert.ok(res.ok);
-		assert.strictEqual(res.headers.get('Access-Control-Allow-Origin'), '*');
-
-		const nodeInfo = await res.json() as any;
-		assert.strictEqual(nodeInfo.software.name, 'misskey');
+		assert.strictEqual(res.status, 404);
 	});
 
 	test('nodeinfo 2.0', async () => {
 		const res = await relativeFetch('nodeinfo/2.0');
-		assert.ok(res.ok);
-		assert.strictEqual(res.headers.get('Access-Control-Allow-Origin'), '*');
-
-		const nodeInfo = await res.json() as any;
-		assert.strictEqual(nodeInfo.software.name, 'misskey');
+		assert.strictEqual(res.status, 404);
 	});
 });

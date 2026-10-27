@@ -19,6 +19,14 @@ import { SystemAccountService } from '@/core/SystemAccountService.js';
 import { GlobalModule } from '@/GlobalModule.js';
 import { UtilityService } from '@/core/UtilityService.js';
 
+// The federation code is dormant in AMIXOF (standalone mode, see misc/standalone.ts). These tests keep
+// covering its internals, so they run with the flag switched on. The disabled behaviour, which is what
+// AMIXOF really runs with, is tested in standalone.ts.
+vi.mock('@/misc/standalone.js', async (importOriginal) => ({
+	...(await importOriginal<typeof import('@/misc/standalone.js')>()),
+	FEDERATION_ENABLED: true,
+}));
+
 describe('RelayService', () => {
 	let app: TestingModule;
 	let relayService: RelayService;
