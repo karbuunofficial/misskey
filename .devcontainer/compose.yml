@@ -8,6 +8,13 @@ services:
       - ../:/workspace:cached
       - node_modules:/workspace/node_modules
 
+    # AMIXOF: application database credentials and other local settings live
+    # in the untracked .config/amixof.env (created from .config/amixof_example.env
+    # by init.sh). It is loaded automatically whenever the container starts.
+    env_file:
+      - path: ../.config/amixof.env
+        required: false
+
     command: sleep infinity
 
     networks:

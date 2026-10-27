@@ -37,12 +37,13 @@ db:
   host: db
   port: 5432
 
-  # Database name
-  db: misskey
-
-  # Auth
-  user: postgres
-  pass: postgres
+  # AMIXOF: the database name and credentials are NOT stored here. They are
+  # read from the environment (DATABASE_DB / DATABASE_USER / DATABASE_PASSWORD),
+  # which the devcontainer loads from the untracked .config/amixof.env.
+  # Uncomment to override explicitly:
+  #db: amixof
+  #user: amixof
+  #pass: ''
 
   # Whether disable Caching queries
   #disableCache: true
@@ -71,45 +72,43 @@ dbReplications: false
 #   ┌─────────────────────┐
 #───┘ Redis configuration └─────────────────────────────────────
 
+# AMIXOF layout: every key is prefixed with `amixof`, and the Redis logical
+# databases are split by purpose:
+#   db 0  main cache + pub/sub
+#   db 1  BullMQ job queues
+#   db 2  timelines (fan-out lists)
+#   db 3  reaction buffering
 redis:
   host: redis
   port: 6379
   #family: 0  # 0=Both, 4=IPv4, 6=IPv6
   #pass: example-pass
-  #prefix: example-prefix
-  #db: 1
+  prefix: amixof
+  db: 0
 
-#redisForPubsub:
-#  host: redis
-#  port: 6379
-#  #family: 0  # 0=Both, 4=IPv4, 6=IPv6
-#  #pass: example-pass
-#  #prefix: example-prefix
-#  #db: 1
+redisForPubsub:
+  host: redis
+  port: 6379
+  prefix: amixof
+  db: 0
 
-#redisForJobQueue:
-#  host: redis
-#  port: 6379
-#  #family: 0  # 0=Both, 4=IPv4, 6=IPv6
-#  #pass: example-pass
-#  #prefix: example-prefix
-#  #db: 1
+redisForJobQueue:
+  host: redis
+  port: 6379
+  prefix: amixof
+  db: 1
 
-#redisForTimelines:
-#  host: redis
-#  port: 6379
-#  #family: 0  # 0=Both, 4=IPv4, 6=IPv6
-#  #pass: example-pass
-#  #prefix: example-prefix
-#  #db: 1
+redisForTimelines:
+  host: redis
+  port: 6379
+  prefix: amixof
+  db: 2
 
-#redisForReactions:
-#  host: redis
-#  port: 6379
-#  #family: 0  # 0=Both, 4=IPv4, 6=IPv6
-#  #pass: example-pass
-#  #prefix: example-prefix
-#  #db: 1
+redisForReactions:
+  host: redis
+  port: 6379
+  prefix: amixof
+  db: 3
 
 #   ┌───────────────────────────┐
 #───┘ MeiliSearch configuration └─────────────────────────────
