@@ -186,19 +186,14 @@ export const PREF_DEF = definePreferences({
 		default: true,
 	},
 	menu: {
+		// AMIXOF order: Home (fixed), Explore, Notifications, Messages, Bookmarks, Profile, then Settings and the
+		// post button. Every other item (clips, drive, follow requests, channels, search, ...) lives under "More".
 		default: [
-			'notifications',
-			'clips',
-			'drive',
-			'followRequests',
-			'chat',
-			'-',
 			'explore',
-			'announcements',
-			'channels',
-			'search',
-			'-',
-			'ui',
+			'notifications',
+			'chat',
+			'favorites',
+			'profile',
 		],
 	},
 	statusbars: {

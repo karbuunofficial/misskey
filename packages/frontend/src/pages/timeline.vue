@@ -5,11 +5,11 @@ SPDX-License-Identifier: AGPL-3.0-only
 
 <template>
 <PageWithHeader v-model:tab="src" :actions="headerActions" :tabs="$i ? headerTabs : headerTabsWhenNotLogin" :swipable="true" :displayMyAvatar="true" :canOmitTitle="true">
-	<div class="_spacer" style="--MI_SPACER-w: 800px;">
-		<MkTip v-if="isBasicTimeline(src)" :k="`tl.${src}`" style="margin-bottom: var(--MI-margin);">
+	<div class="_spacer" :class="$style.feed" style="--MI_SPACER-w: 800px;">
+		<MkTip v-if="isBasicTimeline(src)" :k="`tl.${src}`" :class="$style.tip">
 			{{ i18n.ts._timelineDescription[src] }}
 		</MkTip>
-		<MkPostForm v-if="prefer.r.showFixedPostForm.value" :class="$style.postForm" class="_panel" fixed style="margin-bottom: var(--MI-margin);"/>
+		<MkPostForm v-if="prefer.r.showFixedPostForm.value" :class="$style.postForm" class="_panel" fixed/>
 		<MkStreamingNotesTimeline
 			ref="tlComponent"
 			:key="src + withRenotes + withReplies + onlyFiles + withSensitive"
@@ -325,6 +325,7 @@ definePage(() => ({
 }
 
 .postForm {
+	margin-bottom: var(--MI-margin);
 	border-radius: var(--MI-radius);
 }
 
@@ -332,5 +333,38 @@ definePage(() => ({
 	background: var(--MI_THEME-bg);
 	border-radius: var(--MI-radius);
 	overflow: clip;
+}
+
+.tip {
+	margin-bottom: var(--MI-margin);
+}
+
+/*
+ * AMIXOF desktop shell: the home feed fills its column as one continuous panel (no outer gutter, no
+ * floating rounded card); the column separators come from universal.vue. Narrow viewports keep the
+ * standard spacing. Scoped to this page, not global.
+ */
+@media (min-width: 501px) {
+	div.feed {
+		max-width: none;
+		padding: 0;
+		background: var(--MI_THEME-panel);
+		min-height: 100%;
+	}
+
+	.tip,
+	.postForm {
+		margin-bottom: 0;
+		border-radius: 0;
+	}
+
+	.tip {
+		border-bottom: solid 1px var(--MI_THEME-divider);
+	}
+
+	.tl {
+		background: transparent;
+		border-radius: 0;
+	}
 }
 </style>
